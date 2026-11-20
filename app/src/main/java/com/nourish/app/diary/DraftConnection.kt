@@ -17,6 +17,13 @@ import org.json.JSONObject
 
 internal class DraftConnection(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("draft_connection", Context.MODE_PRIVATE)
+    var chatEnabled: Boolean
+        get() = prefs.getBoolean("receive_chat",false)
+        set(enabled) {
+            prefs.edit().putBoolean("receive_chat", enabled)
+                .putString("chat_session", java.util.UUID.randomUUID().toString()).apply()
+        }
+    val sessionId: String? get() = prefs.getString("chat_session", null)
     val origin: String get() = prefs.getString("origin", "").orEmpty()
     private fun key(): SecretKey {
         val alias = "nourish-draft-access"
@@ -34,7 +41,7 @@ internal class DraftConnection(context: Context) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val enc = Base64.encodeToString(cipher.iv + cipher.doFinal(token.toByteArray()), Base64.NO_WRAP)
-        check(prefs.edit().putString("origin", uri.toASCIIString()).putString("access", enc).commit())
+        check(prefs.edit().remove("chat_session").putBoolean("receive_chat",false).putString("origin", uri.toASCIIString()).putString("access", enc).commit())
     }
     fun disconnect() = prefs.edit().clear().apply()
 

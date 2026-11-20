@@ -37,7 +37,7 @@ internal fun FoodDetails(details: String?, update: (String) -> Unit) {
     data.optJSONArray("ingredients")?.let { rows ->
         for (i in 0 until rows.length()) {
             val row = rows.getJSONObject(i)
-            Text("${row.getString("food")} · ${row.getString("grams")} g · FDC ${row.getString("id")}")
+            Text("${row.getString("food")} · ${row.getString("grams")} g · ${row.optString("source", "FDC " + row.getString("id"))}")
             if (row.optString("assumption").isNotBlank()) Text(row.getString("assumption"))
         }
     }

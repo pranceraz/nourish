@@ -17,12 +17,12 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-      - name: Test draft and private lookup services
+      - name: Test meal drafts, private lookups, and confirmed chat meals
         run: |
           python3 -m venv "$RUNNER_TEMP/nourish-venv"
           source "$RUNNER_TEMP/nourish-venv/bin/activate"
           pip install -r server/requirements.txt
-          python -m unittest server.test_service
+          python -m unittest discover -s server -t .
   debug:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -107,5 +107,6 @@ jobs:
             app/build/diary-test.png
             app/build/photo-input-test.png
             app/build/meal-draft-test.png
+            app/build/confirmed-chat-test.png
           if-no-files-found: error
           retention-days: 14

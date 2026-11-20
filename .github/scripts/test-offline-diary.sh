@@ -25,3 +25,6 @@ adb exec-out run-as com.nourish.app cat files/photo-input-test.png > app/build/p
 
 instrument -e class com.nourish.app.MealDraftTest
 adb exec-out run-as com.nourish.app cat files/meal-draft-test.png > app/build/meal-draft-test.png
+
+instrument -e class com.nourish.app.ConfirmedChatTest
+adb exec-out run-as com.nourish.app cat files/confirmed-chat-test.png > app/build/confirmed-chat-test.png

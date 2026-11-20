@@ -18,11 +18,12 @@ from typing import Annotated
 
 import httpx
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
+from server import chat_diary
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
 ASSETS = Path(__file__).resolve().parents[1] / "app/src/main/assets"
@@ -175,14 +176,6 @@ def vault(user: str, operation: str, value: str = ""):
         db.close()
 
 
-mcp = FastMCP("Nourish food lookup", stateless_http=True, json_response=True,
-              streamable_http_path="/", transport_security=TransportSecuritySettings(
-                  enable_dns_rebinding_protection=True,
-                  allowed_hosts=os.getenv("NOURISH_HOSTS", "localhost:*,127.0.0.1:*").split(","),
-                  allowed_origins=os.getenv("NOURISH_ORIGINS", "https://localhost").split(",")))
-
-
-@mcp.tool()
 async def search_usda_foods(query: str, ctx: Context) -> dict:
     """Search USDA for nutrition profiles of common ingredients and prepared dishes."""
     user = owner(ctx.request_context.request.headers.get("authorization", ""), "lookup")
@@ -208,19 +201,9 @@ async def search_usda_foods(query: str, ctx: Context) -> dict:
         return {"message": "USDA lookup failed. Check the key or try again later."}
 
 
-mcp_app = mcp.streamable_http_app()
+routes = APIRouter()
 
 
-@asynccontextmanager
-async def lifespan(app):
-    async with mcp.session_manager.run():
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
-
-
-@app.middleware("http")
 async def protect_tool(request: Request, call_next):
     if request.url.path.rstrip("/") == "/mcp":
         try:
@@ -241,13 +224,12 @@ async def protect_tool(request: Request, call_next):
     return await call_next(request)
 
 
-@app.exception_handler(RequestValidationError)
 async def invalid_input(request, error):
     # Validation errors can otherwise echo submitted photos, text or keys.
     return JSONResponse({"detail": "Invalid input"}, status_code=422)
 
 
-@app.post("/v1/drafts", response_model=DraftResult)
+@routes.post("/v1/drafts", response_model=DraftResult)
 async def draft(body: DraftRequest, user: User):
     if not body.description.strip() and not body.jpeg:
         raise HTTPException(422, "Describe a meal or attach a photo")
@@ -266,7 +248,7 @@ async def draft(body: DraftRequest, user: User):
         ingredients=[DraftItem(**i.model_dump(), candidates=matches(i.food)) for i in result.ingredients])
 
 
-@app.post("/v1/goals", response_model=GoalSuggestion)
+@routes.post("/v1/goals", response_model=GoalSuggestion)
 async def goal(body: GoalRequest, user: User):
     with (ASSETS / "nutrients.tsv").open() as f:
         nutrient = next((r for r in csv.DictReader(f, delimiter="\t") if r["number"] == body.nutrient), None)
@@ -278,21 +260,45 @@ async def goal(body: GoalRequest, user: User):
         "and explain that an individualized target requires professional advice.", body.context)
 
 
-@app.get("/v1/settings/usda")
+@routes.get("/v1/settings/usda")
 def status(user: User):
     return {"configured": vault(user, "status")}
 
 
-@app.put("/v1/settings/usda", status_code=204)
+@routes.put("/v1/settings/usda", status_code=204)
 def save_key(body: KeyInput, user: User):
     vault(user, "save", body.key.get_secret_value())
     return Response(status_code=204)
 
 
-@app.delete("/v1/settings/usda", status_code=204)
+@routes.delete("/v1/settings/usda", status_code=204)
 def forget_key(user: User):
     vault(user, "remove")
     return Response(status_code=204)
 
 
-app.mount("/mcp", mcp_app)
+def create_app():
+    mcp = FastMCP("Nourish food lookup", stateless_http=True, json_response=True,
+                  streamable_http_path="/", transport_security=TransportSecuritySettings(
+                      enable_dns_rebinding_protection=True,
+                      allowed_hosts=os.getenv("NOURISH_HOSTS", "localhost:*,127.0.0.1:*").split(","),
+                      allowed_origins=os.getenv("NOURISH_ORIGINS", "https://localhost").split(",")))
+    mcp.tool()(search_usda_foods)
+    mcp_app = mcp.streamable_http_app()
+
+    @asynccontextmanager
+    async def lifespan(app):
+        async with mcp.session_manager.run(), chat.session_manager.run():
+            yield
+
+    app = FastAPI(lifespan=lifespan)
+    app.middleware("http")(protect_tool)
+    app.add_exception_handler(RequestValidationError, invalid_input)
+    app.include_router(routes)
+    app.mount("/mcp", mcp_app)
+
+    chat = chat_diary.install(app, app_user, catalog, matches, within_budget)
+    return app
+
+
+app = create_app()

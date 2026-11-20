@@ -4,11 +4,17 @@ Nourish is an offline Android food diary. Tap the pink **+**, enter a food label
 
 Room stores entries and food labels in the app’s private `databases/diary.db`. Each entry retains the label used when it was logged. Preferences DataStore stores personal goals and the demo switch under `files/datastore/`. The first Room schema is checked in under `app/schemas`. P0 had no diary database. Its saved demo preference migrates on upgrade. Fresh installations show your own diary. Clearing storage or uninstalling removes local data. There is no cloud backup.
 
+## Confirm a meal in chat in v0.5.0
+
+With a private Nourish server and OAuth configured, connect a compatible ChatGPT client to the server’s `/chat/mcp` endpoint. Give ChatGPT a photo or description, ask it to show the ingredients and estimated portions, and correct anything it missed. Choose **Ingredient breakdown** or **Complete dish**. Confirm the final review to get a save receipt. ChatGPT can use the bundled USDA catalog or label values and attributed estimates. This flow requires no USDA key.
+
+In Android, open **Settings → AI connection & personal USDA key**, connect to the same server with your app token, then tap **Receive confirmed meals on this device**. Nourish checks when it opens and every 30 seconds while in the foreground. **Check for meals now** starts a check immediately. Open Diary on the meal’s date to see it. Pausing stops new imports. Meals already received remain available offline. Android entries and subsequent local edits stay on the phone. See the [private server and ChatGPT setup](server/README.md#connect-a-chat-client).
+
 ## Everyday meals in v0.4.0
 
 Tap **+ → Build a meal · USDA & AI**. Search 5,431 USDA survey foods and dishes offline, add ingredients and edit their gram weights. The review shows the combined calories and macros. **Ingredient breakdown** saves separate diary items together. **Complete dish** saves one reusable serving with its ingredient and nutrient snapshot. Expand a food’s details to review the FDC IDs and vitamins and minerals. Settings → Nutrients & daily goals controls visibility and targets.
 
-An optional [private backend](server/README.md) enables photo/text ingredient identification, editable AI goal suggestions and a read-only USDA lookup through MCP. A personal USDA key is optional and applies only to authorized live tool calls. The APK works offline immediately; AI requests require configuring your own HTTPS service in Settings. The authenticated ChatGPT diary integration is scheduled for P4.
+An optional [private backend](server/README.md) enables photo/text ingredient identification, editable AI goal suggestions and a read-only USDA lookup through MCP. A personal USDA key is optional and applies only to authorized live tool calls. The APK works offline immediately; AI requests require configuring your own HTTPS service in Settings.
 
 Catalog data is a public-domain FoodData Central Survey Foods extract. The bundled rows contain nutrient values per 100 g. Unknown values stay blank. Rebuild the index with `python tools/import_fndds.py /path/to/archive.zip` using the [pinned USDA download](https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2024-10-31.zip). Use the [USDA search](https://fdc.nal.usda.gov/food-search?type=Survey%20%28FNDDS%29) to explore survey foods.
 
