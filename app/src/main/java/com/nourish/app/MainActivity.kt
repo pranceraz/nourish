@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import com.nourish.app.diary.DiaryDatabase
+import com.nourish.app.diary.DiaryPreferences
 import com.nourish.app.ui.NourishApp
 import java.time.LocalDate
 import kotlinx.coroutines.delay
@@ -15,7 +17,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val preferences = getSharedPreferences("nourish", MODE_PRIVATE)
+        val preferences = DiaryPreferences(this)
+        val dao = DiaryDatabase.open(this).diary()
         setContent {
             val date by produceState(LocalDate.now()) {
                 while (true) {
@@ -23,13 +26,7 @@ class MainActivity : ComponentActivity() {
                     value = LocalDate.now()
                 }
             }
-            NourishApp(
-                date = date,
-                initiallyShowDemo = preferences.getBoolean("show_demo", true),
-                onDemoPreferenceChanged = { show ->
-                    preferences.edit().putBoolean("show_demo", show).apply()
-                },
-            )
+            NourishApp(date = date, dao = dao, store = preferences)
         }
     }
 }

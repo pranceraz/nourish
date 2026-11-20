@@ -83,7 +83,8 @@ Define units precisely; distinguish grams from servings, raw vs cooked; prevent 
 - The phone's Room database is private; ChatGPT connects through authenticated server-side services, not directly to the phone.
 
 ### P5 — Polish and release readiness
-- Animated nutrient progress, refined sheets/gestures, screenshots, accessibility audit, release configurations, realistic startup/scroll benchmarks, Baseline Profiles, export/backup/delete, optional widget and notification opt-in.
+- Animated nutrient progress, refined sheets/gestures, screenshots, accessibility audit, release configurations, realistic startup/scroll benchmarks, Baseline Profiles, export/backup/delete, notification opt-in.
+- Deliver interruptible page transitions, press-and-hold feedback on interactive controls, and a resizable Android home-screen widget showing Today’s local totals. Follow the P5 interaction and widget requirements in `design/DESIGN.md`.
 
 ## Acceptance criteria by phase
 - P0: Gradle build succeeds; home preview matches the design direction; navigation works; APK available from CI; no placeholder interactions misrepresented as features.

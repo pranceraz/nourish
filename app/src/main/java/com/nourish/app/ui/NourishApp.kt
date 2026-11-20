@@ -37,6 +37,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import com.nourish.app.diary.*
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.flow.flowOf
+import java.util.UUID
+import kotlinx.coroutines.CancellationException
+import com.nourish.app.ui.today.NutritionSparkline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +62,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nourish.app.BuildConfig
 import com.nourish.app.model.DemoNutrition
-import com.nourish.app.ui.add.QuickAddSheet
 import com.nourish.app.ui.theme.NourishMotion
 import com.nourish.app.ui.theme.NourishShape
 import com.nourish.app.ui.theme.NourishTheme
@@ -77,22 +82,45 @@ internal enum class Destination(val label: String, val glyph: Glyph) {
 internal fun NourishApp(
     date: LocalDate,
     initiallyShowDemo: Boolean = true,
-    onDemoPreferenceChanged: (Boolean) -> Unit = {},
+    dao: DiaryDao? = null,
+    store: DiaryPreferences? = null,
     initialDestination: Destination = Destination.Today,
 ) {
     NourishTheme {
         val colors = nourishColors
         var destination by rememberSaveable { mutableStateOf(initialDestination) }
-        var showDemo by rememberSaveable { mutableStateOf(initiallyShowDemo) }
+        val preferences by remember(store) { store?.values ?: flowOf(Preferences(initiallyShowDemo)) }
+            .collectAsState(initial = if (store == null) Preferences(initiallyShowDemo) else null)
+        val prefs = preferences ?: return@NourishTheme
         var quickAddOpen by rememberSaveable { mutableStateOf(false) }
-        var additions by rememberSaveable { mutableStateOf(intArrayOf()) }
-        val demoMeals = remember(showDemo, additions) {
-            if (showDemo) DemoNutrition.meals(additions.toList()) else null
+        var selected by rememberSaveable { mutableStateOf<String?>(null) }
+        val diaryDate = selected ?: date.toString()
+        var editorDate by rememberSaveable { mutableStateOf(date.toString()) }
+        var editId by rememberSaveable { mutableStateOf<String?>(null) }
+        val weekStart = date.minusDays(6).toString()
+        val week by remember(dao, date) { dao?.entries(weekStart, date.toString()) ?: flowOf(emptyList<Entry>()) }
+            .collectAsState(emptyList())
+        val day by androidx.compose.runtime.key(diaryDate) {
+            remember(dao, diaryDate) { dao?.entries(diaryDate, diaryDate) ?: flowOf(emptyList<Entry>()) }
+                .collectAsState(emptyList())
+        }
+        val foods by remember(dao) { dao?.foods() ?: flowOf(emptyList<Food>()) }.collectAsState(emptyList())
+        fun add() {
+            editId = null
+            editorDate = if (destination == Destination.Diary) diaryDate else date.toString()
+            quickAddOpen = true
         }
         val todayScroll = rememberLazyListState()
         val snackbars = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
 
+        fun write(action: suspend () -> Unit) {
+            scope.launch {
+                try { action() }
+                catch (cancel: CancellationException) { throw cancel }
+                catch (_: Exception) { snackbars.showSnackbar("Couldn’t save that change. Please try again.") }
+            }
+        }
         BackHandler(enabled = destination != Destination.Today && !quickAddOpen) {
             destination = Destination.Today
         }
@@ -100,51 +128,44 @@ internal fun NourishApp(
         NourishScaffold(
             destination = destination,
             onNavigate = { destination = it },
-            onQuickAdd = { quickAddOpen = true },
+            onQuickAdd = ::add,
             snackbars = snackbars,
         ) {
             Crossfade(destination, animationSpec = NourishMotion.selection, label = "tab change") { screen ->
                 when (screen) {
-                    Destination.Today -> TodayScreen(date, demoMeals, todayScroll)
-                    Destination.Diary -> PageContent("Diary") {
-                        EmptyState(
-                            "Your meal log",
-                            "The offline diary will let you log, edit, and revisit your own meals.",
-                            Glyph.Diary,
-                            colors.peach,
-                        )
-                    }
+                    Destination.Today -> TodayScreen(date, if (prefs.demo) DemoNutrition.starterMeals else null,
+                        todayScroll, week.filter { it.date == date.toString() }, prefs.goals)
+                    Destination.Diary -> DiaryScreen(LocalDate.parse(diaryDate), day,
+                        onDate = { selected = it.toString() }, onEdit = {
+                            editId = it.id; editorDate = diaryDate; quickAddOpen = true
+                        }, onDuplicate = { entry ->
+                            val id = UUID.randomUUID().toString()
+                            write { requireNotNull(dao).duplicate(entry.id, id) }
+                        }, onDelete = { entry -> write { requireNotNull(dao).delete(entry.id) } }, onAdd = ::add)
                     Destination.Insights -> PageContent("Insights") {
-                        EmptyState(
-                            "A view of your week",
-                            "Your trends will show up here once the diary has meals to summarize.",
-                            Glyph.Insights,
-                            colors.blue,
-                        )
+                        if (week.isEmpty()) EmptyState("A view of your week",
+                            "Log food this week to see your daily totals.", Glyph.Insights, colors.blue)
+                        else NutritionSparkline(date, (6 downTo 0).map { offset ->
+                            week.filter { it.date == date.minusDays(offset.toLong()).toString() }.nutrition().calories
+                        }, sample = false)
                     }
-                    Destination.Settings -> SettingsScreen(showDemo) { enabled ->
-                        showDemo = enabled
-                        onDemoPreferenceChanged(enabled)
-                    }
+                    Destination.Settings -> SettingsScreen(prefs.demo,
+                        onDemoChanged = { enabled -> write { requireNotNull(store).demo(enabled) } },
+                        goals = prefs.goals, onSaveGoals = { requireNotNull(store).goals(it) })
                 }
             }
         }
 
-        if (quickAddOpen) {
-            QuickAddSheet(
-                showDemo = showDemo,
-                onDismiss = { quickAddOpen = false },
-                onAddSample = { index ->
-                    additions += index
-                    destination = Destination.Today
-                    scope.launch {
-                        todayScroll.requestScrollToItem(0)
-                        snackbars.currentSnackbarData?.dismiss()
-                        snackbars.showSnackbar("Added to demo · ${DemoNutrition.options[index].name}")
-                    }
-                },
-                onOpenSettings = { destination = Destination.Settings },
-            )
+        if (quickAddOpen && dao != null) {
+            val original = day.find { it.id == editId }
+            if (editId == null || original != null) EntryEditor(editorDate, original, foods,
+                onClose = { quickAddOpen = false },
+                onFavorite = { food -> write { dao.favorite(food.id, !food.favorite) } },
+                onSave = { entry ->
+                    dao.save(entry, editId != null)
+                    selected = editorDate
+                    destination = Destination.Diary
+                })
         }
     }
 }
@@ -278,9 +299,10 @@ private fun PageContent(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingsScreen(showDemo: Boolean, onDemoChanged: (Boolean) -> Unit) {
+private fun SettingsScreen(showDemo: Boolean, onDemoChanged: (Boolean) -> Unit, goals: com.nourish.app.model.Nutrition, onSaveGoals: suspend (List<Int>) -> Unit) {
     val colors = nourishColors
     PageContent("Settings") {
+        GoalPanel(goals, onSaveGoals)
         Column(
             Modifier.fillMaxWidth().clip(NourishShape.panel).background(colors.panel).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -309,7 +331,7 @@ private fun SettingsScreen(showDemo: Boolean, onDemoChanged: (Boolean) -> Unit) 
             }
             HorizontalDivider(color = colors.divider)
             Text(
-                "Sample additions stay in the current app session. This setting is saved on this device.",
+                "Demo affects Today only. The pink + always saves to your own diary.",
                 color = colors.muted,
                 style = NourishType.caption,
             )
