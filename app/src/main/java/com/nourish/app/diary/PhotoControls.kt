@@ -1,7 +1,7 @@
 package com.nourish.app.diary
 
 import android.graphics.BitmapFactory
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,7 +61,7 @@ internal fun PhotoControls(
         val input = pendingUri ?: return@LaunchedEffect
         onWorking(true)
         try {
-            val uri = Uri.parse(input)
+            val uri = input.toUri()
             if (scanning) {
                 val code = withContext(Dispatchers.IO) { images.scan(uri) }
                 if (code == null) message = "Couldn’t read the barcode. Try again in good light or type its digits."
