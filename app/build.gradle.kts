@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.ksp)
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
@@ -27,8 +28,8 @@ android {
         applicationId = "com.nourish.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BUILD_ID", "\"${buildId.get()}\"")
     }
@@ -44,7 +45,12 @@ android {
     }
 }
 
+ksp { arg("room.schemaLocation", file("schemas").absolutePath) }
+
 dependencies {
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
+    implementation(libs.preferences)
     implementation(platform(libs.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.compose.animation)

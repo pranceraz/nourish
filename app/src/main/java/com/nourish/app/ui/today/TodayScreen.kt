@@ -48,6 +48,8 @@ import com.nourish.app.ui.theme.NourishMotion
 import com.nourish.app.ui.theme.NourishShape
 import com.nourish.app.ui.theme.NourishType
 import com.nourish.app.ui.theme.nourishColors
+import com.nourish.app.diary.Entry
+import com.nourish.app.diary.nutrition
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -57,26 +59,30 @@ internal fun TodayScreen(
     date: LocalDate,
     demoMeals: List<DemoFood>?,
     state: LazyListState,
+    entries: List<Entry> = emptyList(),
+    goals: Nutrition = Nutrition(),
 ) {
     val colors = nourishColors
     LazyColumn(state = state) {
         item {
             TodayHeader(date, showDemo = demoMeals != null)
         }
-        if (demoMeals == null) {
+        if (demoMeals == null && entries.isEmpty()) {
             item {
                 EmptyState(
                     title = "Your day is open",
-                    message = "Manual logging arrives with the offline diary. You can turn on sample nutrition in Settings.",
+                    message = "Tap the pink + to log your first food today.",
                     glyph = Glyph.Bowl,
                     accent = colors.butter,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                 )
             }
         } else {
-            val total = DemoNutrition.total(demoMeals)
-            item { HeroMetric(total.calories, DemoNutrition.goal.calories) }
-            item { MacroHighlights(total, DemoNutrition.goal) }
+            val meals = demoMeals ?: entries.map { DemoFood(it.label.name, it.meal, listOf(it).nutrition()) }
+            val total = if (demoMeals == null) entries.nutrition() else DemoNutrition.total(demoMeals)
+            val goal = if (demoMeals == null) goals else DemoNutrition.goal
+            item { HeroMetric(total.calories, goal.calories) }
+            item { MacroHighlights(total, goal) }
             item {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 6.dp),
@@ -85,16 +91,16 @@ internal fun TodayScreen(
                 ) {
                     Heading("Today’s meals", Modifier.weight(1f))
                     Text(
-                        if (demoMeals.size == 1) "1 meal" else "${demoMeals.size} meals",
+                        if (meals.size == 1) "1 meal" else "${meals.size} meals",
                         style = NourishType.caption,
                         color = colors.muted,
                     )
                 }
             }
-            items(demoMeals) { meal ->
+            items(meals) { meal ->
                 MealRow(meal, Modifier.padding(horizontal = 20.dp))
             }
-            item {
+            if (demoMeals != null) item {
                 NutritionSparkline(
                     date,
                     DemoNutrition.week(total.calories),
@@ -151,7 +157,7 @@ private fun TodayHeader(date: LocalDate, showDemo: Boolean) {
 internal fun HeroMetric(calories: Int, goal: Int, modifier: Modifier = Modifier) {
     val colors = nourishColors
     val fraction by animateFloatAsState(
-        targetValue = (calories.toFloat() / goal).coerceIn(0f, 1f),
+        targetValue = if (goal > 0) (calories.toFloat() / goal).coerceIn(0f, 1f) else 0f,
         animationSpec = NourishMotion.settle,
         label = "calorie goal progress",
     )
@@ -173,7 +179,7 @@ internal fun HeroMetric(calories: Int, goal: Int, modifier: Modifier = Modifier)
                 autoSize = TextAutoSize.StepBased(minFontSize = 30.sp, maxFontSize = 92.sp),
             )
             Text("kcal eaten", color = colors.ink, style = NourishType.strong)
-            Box(
+            if (goal > 0) Box(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = 14.dp, bottom = 9.dp)
@@ -183,7 +189,7 @@ internal fun HeroMetric(calories: Int, goal: Int, modifier: Modifier = Modifier)
             ) {
                 Box(Modifier.fillMaxWidth(fraction).height(6.dp).clip(NourishShape.pill).background(colors.ink))
             }
-            Row(
+            if (goal > 0) Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +211,7 @@ private fun MacroHighlights(total: Nutrition, goal: Nutrition) {
     val colors = nourishColors
     Column(Modifier.fillMaxWidth().padding(start = 20.dp, top = 19.dp, end = 20.dp)) {
         Heading("Macro mix")
-        Text("Grams eaten / sample goal", color = colors.muted, style = NourishType.caption)
+        Text("Grams eaten", color = colors.muted, style = NourishType.caption)
         BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 10.dp)) {
             val stack = maxWidth < 290.dp || LocalDensity.current.fontScale > 1.3f
             if (stack) {
@@ -236,7 +242,7 @@ internal fun PastelMetricCard(
 ) {
     val ink = nourishColors.ink
     val fraction by animateFloatAsState(
-        targetValue = (grams.toFloat() / goal).coerceIn(0f, 1f),
+        targetValue = if (goal > 0) (grams.toFloat() / goal).coerceIn(0f, 1f) else 0f,
         animationSpec = NourishMotion.settle,
         label = "macro goal progress",
     )
@@ -252,8 +258,8 @@ internal fun PastelMetricCard(
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = 34.sp),
             )
-            Text("/ ${goal.formatted()} g", color = ink, style = NourishType.caption)
-            Box(
+            Text(if (goal > 0) "/ ${goal.formatted()} g" else "grams", color = ink, style = NourishType.caption)
+            if (goal > 0) Box(
                 Modifier.fillMaxWidth().padding(top = 7.dp).height(4.dp)
                     .clip(NourishShape.pill).background(ink.copy(alpha = 0.18f)),
             ) {
@@ -291,9 +297,9 @@ private fun MealRow(meal: DemoFood, modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun NutritionSparkline(date: LocalDate, calories: List<Int>, modifier: Modifier = Modifier) {
+internal fun NutritionSparkline(date: LocalDate, calories: List<Int>, modifier: Modifier = Modifier, sample: Boolean = true) {
     val colors = nourishColors
-    val maximum = maxOf(calories.max(), DemoNutrition.goal.calories)
+    val maximum = maxOf(calories.max(), 1)
     val days = calories.indices.map { date.minusDays((calories.lastIndex - it).toLong()) }
     val locale = LocalLocale.current.platformLocale
     val kcalFormat = NumberFormat.getIntegerInstance(locale)
@@ -307,7 +313,7 @@ internal fun NutritionSparkline(date: LocalDate, calories: List<Int>, modifier: 
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Text("7-day energy", Modifier.semantics { heading() }, style = NourishType.heading, color = colors.ink)
-        Text("Daily calories · sample week", style = NourishType.caption, color = colors.ink)
+        Text(if (sample) "Daily calories · sample week" else "Logged calories · past seven days", style = NourishType.caption, color = colors.ink)
         Row(
             Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = readings },
             horizontalArrangement = Arrangement.spacedBy(5.dp),

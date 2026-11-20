@@ -1,6 +1,8 @@
 # Nourish
 
-Nourish is a native Android nutrition journal in development. The P0 build shows sample calories, macros, meals, and a seven-day trend on Today. Tap the pink **+** to add a sample food and see the totals change. You can hide the sample data in **Settings → Demo data**. Sample additions last for the current app session.
+Nourish is an offline Android food diary. Tap the pink **+**, enter a food label per serving or per 100 g, then enter how much you ate. Save to see the meal and daily totals. Open **Diary → Actions** to edit, duplicate, or remove an entry. Tap the date to switch days. Saved foods are available under **+**, with favorites first.
+
+Room stores entries and food labels in the app’s private `databases/diary.db`. Each entry retains the label used when it was logged. Preferences DataStore stores personal goals and the demo switch under `files/datastore/`. The first Room schema is checked in under `app/schemas`. P0 had no diary database. Its saved demo preference migrates on upgrade. Fresh installations show your own diary. Clearing storage or uninstalling removes local data. There is no cloud backup.
 
 ## Build locally
 
@@ -12,7 +14,7 @@ sdkmanager 'platforms;android-37.2' 'build-tools;37.0.0' 'platform-tools'
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Use an Android 8.0 (API 26) or newer device. Run the Compose instrumented test with a connected device or emulator using `./gradlew :app:connectedDebugAndroidTest`. Android Studio previews are in `NourishPreviews.kt`, including dark theme, compact and large phones, large text, and both quick-add views.
+Use an Android 8.0 (API 26) or newer device. Run the Compose instrumented test with a connected device or emulator using `./gradlew :app:connectedDebugAndroidTest`. Android Studio previews are in `NourishPreviews.kt`, including dark theme, compact and large phones, large text, and the major tabs.
 
 ## Install a GitHub build
 

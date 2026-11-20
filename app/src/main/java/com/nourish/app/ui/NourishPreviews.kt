@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.nourish.app.ui.add.QuickAddPanel
 import com.nourish.app.ui.theme.NourishTheme
 import com.nourish.app.ui.theme.nourishColors
 import com.nourish.app.ui.today.HeroMetric
@@ -50,36 +49,6 @@ private fun InsightsPreview() {
 @Composable
 private fun SettingsPreviews() {
     NourishApp(date = previewDate, initialDestination = Destination.Settings)
-}
-
-@Preview(name = "Entry", group = "Quick add", widthDp = 360, showBackground = true, backgroundColor = 0xFF201E21)
-@Composable
-private fun QuickAddPreview() {
-    SheetPreview(browsing = false)
-}
-
-@Preview(name = "Food selection", group = "Quick add", widthDp = 360, showBackground = true, backgroundColor = 0xFF201E21)
-@Preview(name = "Food selection at large text", group = "Quick add", widthDp = 360, fontScale = 2f, showBackground = true, backgroundColor = 0xFF201E21)
-@Composable
-private fun SampleFoodsPreview() {
-    SheetPreview(browsing = true)
-}
-
-@Composable
-private fun SheetPreview(browsing: Boolean) {
-    NourishTheme {
-        QuickAddPanel(
-            showDemo = true,
-            browsing = browsing,
-            selection = 0,
-            onBrowse = {},
-            onSelection = {},
-            onBack = {},
-            onClose = {},
-            onAdd = {},
-            onOpenSettings = {},
-        )
-    }
 }
 
 @Preview(name = "Hero and macro", group = "Components", widthDp = 390)
