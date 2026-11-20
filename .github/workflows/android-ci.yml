@@ -40,6 +40,7 @@ jobs:
             https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
             --output "$archive"
           echo "7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee  $archive" | sha256sum --check
+          mkdir -p "$sdk_root/cmdline-tools"
           unzip -q "$archive" -d "$sdk_root/cmdline-tools"
           mv "$sdk_root/cmdline-tools/cmdline-tools" "$sdk_root/cmdline-tools/19.0"
           sdkmanager="$sdk_root/cmdline-tools/19.0/bin/sdkmanager"
