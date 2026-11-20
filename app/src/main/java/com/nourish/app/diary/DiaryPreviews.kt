@@ -25,5 +25,5 @@ private fun SavedMealPreview() {
 @Preview(name = "Edit portion", widthDp = 390, heightDp = 844)
 @Composable
 private fun EditPortionPreview() {
-    NourishTheme { EntryEditor(example.date, example, emptyList(), {}, {}, {}) }
+    NourishTheme { EntryEditor(example.date, example, emptyList(), {}, {}, { _, _, _, _ -> }) }
 }

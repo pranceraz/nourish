@@ -25,10 +25,10 @@ internal data class Label(
     val kcal: Long, val protein: Long, val carbs: Long, val fat: Long,
 )
 
-@Entity(tableName = "foods")
+@Entity(tableName = "foods", indices = [Index(value = ["barcode"], unique = true)])
 internal data class Food(
     @PrimaryKey val id: String, @Embedded val label: Label,
-    val lastUsed: Long, val favorite: Boolean = false,
+    val lastUsed: Long, val favorite: Boolean = false, val barcode: String? = null,
 )
 
 @Entity(tableName = "entries", indices = [Index("date"), Index("foodId")])
@@ -36,6 +36,11 @@ internal data class Entry(
     @PrimaryKey val id: String, val date: String, val meal: String, val foodId: String,
     @Embedded val label: Label, val quantity: Long, val created: Long,
 )
+
+@Entity(tableName = "meal_photos", foreignKeys = [ForeignKey(
+    entity = Entry::class, parentColumns = ["id"], childColumns = ["entryId"], onDelete = ForeignKey.CASCADE,
+)])
+internal class MealPhoto(@PrimaryKey val entryId: String, val jpeg: ByteArray)
 
 internal fun List<Entry>.nutrition(): Nutrition {
     fun sum(nutrient: (Label) -> Long): Int {
@@ -68,6 +73,24 @@ internal abstract class DiaryDao {
     @Query("DELETE FROM entries WHERE id = :id")
     abstract suspend fun delete(id: String)
 
+    @Query("SELECT jpeg FROM meal_photos WHERE entryId = :id")
+    abstract suspend fun photo(id: String): ByteArray?
+    @Upsert abstract suspend fun storePhoto(photo: MealPhoto)
+    @Query("DELETE FROM meal_photos WHERE entryId = :id")
+    abstract suspend fun removePhoto(id: String)
+    @Query("UPDATE foods SET barcode = :code WHERE id = :foodId")
+    abstract suspend fun bindBarcode(foodId: String, code: String)
+
+    @Transaction
+    open suspend fun saveWithInputs(value: Entry, editing: Boolean, barcode: String?, photoChanged: Boolean, jpeg: ByteArray?) {
+        if (!editing && entry(value.id) != null) return
+        save(value, editing)
+        if (barcode != null) bindBarcode(value.foodId, requireNotNull(productCode(barcode)))
+        if (photoChanged) {
+            if (jpeg == null) removePhoto(value.id) else storePhoto(MealPhoto(value.id, jpeg))
+        }
+    }
+
     @Transaction
     open suspend fun save(value: Entry, editing: Boolean) {
         val existing = entry(value.id)
@@ -80,7 +103,7 @@ internal abstract class DiaryDao {
         val catalog = food(value.foodId)
         // A quantity-only edit must not replace a newer reusable food label.
         val catalogLabel = if (catalog != null && existing?.label == label) catalog.label else label
-        storeFood(Food(value.foodId, catalogLabel, System.currentTimeMillis(), catalog?.favorite ?: false))
+        storeFood(Food(value.foodId, catalogLabel, System.currentTimeMillis(), catalog?.favorite ?: false, catalog?.barcode))
         if (editing) update(value) else insert(value)
     }
 
@@ -89,12 +112,14 @@ internal abstract class DiaryDao {
         val entry = requireNotNull(entry(id))
         val now = System.currentTimeMillis()
         if (insert(entry.copy(id = newId, created = now)) != -1L) {
+            photo(id)?.let { storePhoto(MealPhoto(newId, it)) }
             food(entry.foodId)?.let { storeFood(it.copy(lastUsed = now)) }
         }
     }
 }
 
-@Database(entities = [Entry::class, Food::class], version = 1, exportSchema = true)
+@Database(entities = [Entry::class, Food::class, MealPhoto::class], version = 2, exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)])
 internal abstract class DiaryDatabase : RoomDatabase() {
     abstract fun diary(): DiaryDao
     companion object {

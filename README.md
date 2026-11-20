@@ -4,6 +4,14 @@ Nourish is an offline Android food diary. Tap the pink **+**, enter a food label
 
 Room stores entries and food labels in the app’s private `databases/diary.db`. Each entry retains the label used when it was logged. Preferences DataStore stores personal goals and the demo switch under `files/datastore/`. The first Room schema is checked in under `app/schemas`. P0 had no diary database. Its saved demo preference migrates on upgrade. Fresh installations show your own diary. Clearing storage or uninstalling removes local data. There is no cloud backup.
 
+## Faster food entry in v0.3.0
+
+Tap **+** and search your saved foods by name or product barcode. **Scan package barcode** opens the phone’s camera. Fill the frame with a clear UPC or EAN, then confirm the photo. You can also type the digits and tap **Use barcode**. For a new product, enter its label and save once. Future scans find that saved label offline.
+
+**Take photo** and **Choose photo** attach a meal picture to a draft. Review the photo and enter the nutrition before saving. Reopen **Diary → Actions → Edit** to view, replace, or remove it. Nourish keeps a resized JPEG in its private database and strips original metadata. The camera gets temporary access to a capture file, and the picker shares only the photo you select. Neither action needs broad library access.
+
+The built-in nutrition provider searches this device’s saved foods. Photos are visual references. Automatic estimation is planned for P3.
+
 ## Build locally
 
 Open the project root in Android Studio or use JDK 21 with Android SDK Platform **37.2**, Build Tools **37.0.0**, and Platform Tools.

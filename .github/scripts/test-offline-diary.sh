@@ -18,3 +18,7 @@ instrument -e class com.nourish.app.NourishAppTest -e phase create
 adb shell am force-stop com.nourish.app
 instrument -e class com.nourish.app.NourishAppTest -e phase reopen
 adb exec-out run-as com.nourish.app cat files/diary-test.png > app/build/diary-test.png
+
+instrument -e class com.nourish.app.InputMigrationTest
+instrument -e class com.nourish.app.InputFlowTest
+adb exec-out run-as com.nourish.app cat files/photo-input-test.png > app/build/photo-input-test.png

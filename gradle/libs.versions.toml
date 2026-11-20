@@ -11,7 +11,13 @@ room = "2.8.5"
 datastore = "1.3.0"
 ksp = "2.3.14"
 
+zxing = "3.5.4"
+exif = "1.4.2"
+
 [libraries]
+room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+barcode-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+exif = { module = "androidx.exifinterface:exifinterface", version.ref = "exif" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }

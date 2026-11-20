@@ -12,6 +12,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.nourish.app.ui.Heading
 import com.nourish.app.ui.theme.*
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -20,13 +23,14 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun EntryEditor(
     date: String, original: Entry?, foods: List<Food>, onClose: () -> Unit,
-    onFavorite: (Food) -> Unit, onSave: suspend (Entry) -> Unit,
+    onFavorite: (Food) -> Unit, onSave: suspend (Entry, String?, Boolean, ByteArray?) -> Unit,
+    loadPhoto: suspend (String) -> ByteArray? = { null },
 ) {
     val scope = rememberCoroutineScope()
     val entryId = rememberSaveable { original?.id ?: UUID.randomUUID().toString() }
     val newFoodId = rememberSaveable { UUID.randomUUID().toString() }
     var foodId by rememberSaveable { mutableStateOf(original?.foodId ?: newFoodId) }
-    var picking by rememberSaveable { mutableStateOf(original == null && foods.isNotEmpty()) }
+    var picking by rememberSaveable { mutableStateOf(original == null) }
     var name by rememberSaveable { mutableStateOf(original?.label?.name.orEmpty()) }
     var meal by rememberSaveable { mutableStateOf(original?.meal ?: "Breakfast") }
     var unit by rememberSaveable { mutableStateOf(original?.label?.unit ?: "Serving") }
@@ -36,35 +40,84 @@ internal fun EntryEditor(
     var values by rememberSaveable { mutableStateOf<List<String>>(ArrayList(numbers(original?.label))) }
     var busy by remember { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val images = remember(context) { MealImages(context) }
+    val provider: FoodProvider = remember(foods) { SavedFoodProvider(foods) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var barcode by rememberSaveable { mutableStateOf<String?>(null) }
+    var draftPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    var photoChanged by rememberSaveable { mutableStateOf(false) }
+    var processing by remember { mutableStateOf(false) }
+    var savedPhoto by remember { mutableStateOf<ByteArray?>(null) }
+    LaunchedEffect(original?.id) {
+        withContext(Dispatchers.IO) { images.prune() }
+        if (original != null) {
+            try { savedPhoto = loadPhoto(original.id) }
+            catch (cancel: CancellationException) { throw cancel }
+            catch (_: Exception) { error = "Couldn’t display the saved photo." }
+        }
+    }
+    fun close() {
+        draftPhoto?.let { images.draftFile(it).delete() }
+        onClose()
+    }
+    fun select(food: Food) {
+        foodId = food.id
+        name = food.label.name
+        unit = food.label.unit
+        prep = food.label.preparation
+        qty = if (unit == "Grams") "100" else "1"
+        values = ArrayList(numbers(food.label))
+        barcode = food.barcode
+        picking = false
+    }
+    fun useBarcode(code: String) {
+        val match = provider.lookup(code)
+        if (match == null) {
+            barcode = code
+            picking = false
+        } else select(match)
+    }
     ModalBottomSheet(
-        onDismissRequest = { if (!busy) onClose() },
+        onDismissRequest = { if (!busy && !processing) close() },
         sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
         containerColor = nourishColors.canvas,
     ) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(date, style = NourishType.eyebrow, color = nourishColors.muted)
-            Heading(if (original != null) "Edit food" else "Log food")
+            Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Heading(if (original != null) "Edit food" else "Log food", Modifier.weight(1f))
+                TextButton(enabled = !busy && !processing, onClick = ::close) { Text("Close") }
+            }
+            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking,
+                onPhoto = { new ->
+                    draftPhoto?.let { images.draftFile(it).delete() }
+                    draftPhoto = new
+                    photoChanged = true
+                    picking = false
+                }, onBarcode = ::useBarcode, onWorking = { processing = it })
             if (picking) {
+                OutlinedTextField(query, { query = it.take(100) }, Modifier.fillMaxWidth(),
+                    label = { Text("Search saved foods or type barcode") }, singleLine = true)
+                val matches = remember(provider, query) { provider.search(query) }
+                productCode(query)?.let { code ->
+                    Button(onClick = { useBarcode(code) }) { Text("Use barcode") }
+                }
                 Button(onClick = { picking = false }) { Text("Create a custom food") }
-                foods.groupBy { it.favorite }.forEach { (starred, group) ->
+                if (query.isNotBlank() && matches.isEmpty()) Text("No matching food on this device.")
+                matches.groupBy { it.favorite }.forEach { (starred, group) ->
                     Heading(if (starred) "Favorites" else "Recently used", style = NourishType.heading)
                     group.forEach { food ->
                         Row(Modifier.fillMaxWidth()) {
-                            TextButton(modifier = Modifier.weight(1f), onClick = {
-                                foodId = food.id
-                                name = food.label.name
-                                unit = food.label.unit
-                                prep = food.label.preparation
-                                qty = if (unit == "Grams") "100" else "1"
-                                values = ArrayList(numbers(food.label))
-                                picking = false
-                            }) { Text(food.label.name) }
+                            TextButton(modifier = Modifier.weight(1f), onClick = { select(food) }) { Text(food.label.name) }
                             TextButton(onClick = { onFavorite(food) }) { Text(if (starred) "Unfavorite" else "Favorite") }
                         }
                     }
                 }
             } else {
+                barcode?.let { Text("Package · $it", style = NourishType.caption) }
+                if (barcode != null && provider.lookup(barcode!!) == null) Text("New barcode. Save the label once to reuse it next time.")
                 OutlinedTextField(name, { name = it.take(100) }, label = { Text("Food name") }, singleLine = true)
                 Choices("Meal", meal, mealTypes) { meal = it }
                 Choices("Nutrition basis", unit, portionUnits) {
@@ -85,12 +138,16 @@ internal fun EntryEditor(
                     quantity, original?.created ?: System.currentTimeMillis()) else null
                 draft?.let { Text("Portion total · ${listOf(it).nutrition().calories} kcal", style = NourishType.strong) }
                 if (error.isNotEmpty()) Text(error)
-                Button(enabled = !busy, onClick = {
+                Button(enabled = !busy && !processing, onClick = {
                     if (draft == null) error = "Enter a name, four label values (zero is fine), and a positive portion. Use up to three decimal places."
                     else if (!busy) {
                         busy = true
                         scope.launch {
-                            try { onSave(draft); onClose() }
+                            try {
+                                val jpeg = withContext(Dispatchers.IO) { draftPhoto?.let { images.draftFile(it).readBytes() } }
+                                onSave(draft, barcode, photoChanged, jpeg)
+                                close()
+                            }
                             catch (cancel: CancellationException) { throw cancel }
                             catch (_: Exception) { error = "Couldn’t save this food. Your draft is here to retry." }
                             finally { busy = false }

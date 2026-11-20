@@ -78,7 +78,7 @@ jobs:
       - name: Enable emulator hardware acceleration
         run: sudo chmod 666 /dev/kvm
 
-      - name: Verify the offline diary across a process restart
+      - name: Verify offline diary, input flows, and database upgrade
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 30
@@ -90,6 +90,8 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: diary-preview
-          path: app/build/diary-test.png
+          path: |
+            app/build/diary-test.png
+            app/build/photo-input-test.png
           if-no-files-found: error
           retention-days: 14
