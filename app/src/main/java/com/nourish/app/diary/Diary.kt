@@ -23,6 +23,7 @@ internal fun amountText(value: Long): String =
 internal data class Label(
     val name: String, val unit: String, val preparation: String,
     val kcal: Long, val protein: Long, val carbs: Long, val fat: Long,
+    val details: String? = null,
 )
 
 @Entity(tableName = "foods", indices = [Index(value = ["barcode"], unique = true)])
@@ -108,6 +109,15 @@ internal abstract class DiaryDao {
     }
 
     @Transaction
+    open suspend fun saveMeal(entries: List<Entry>, jpeg: ByteArray?) {
+        require(entries.isNotEmpty())
+        if (entry(entries.first().id) != null) return
+        entries.forEachIndexed { index, entry ->
+            saveWithInputs(entry, false, null, index == 0 && jpeg != null, if (index == 0) jpeg else null)
+        }
+    }
+
+    @Transaction
     open suspend fun duplicate(id: String, newId: String) {
         val entry = requireNotNull(entry(id))
         val now = System.currentTimeMillis()
@@ -118,8 +128,8 @@ internal abstract class DiaryDao {
     }
 }
 
-@Database(entities = [Entry::class, Food::class, MealPhoto::class], version = 2, exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)])
+@Database(entities = [Entry::class, Food::class, MealPhoto::class], version = 3, exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)])
 internal abstract class DiaryDatabase : RoomDatabase() {
     abstract fun diary(): DiaryDao
     companion object {

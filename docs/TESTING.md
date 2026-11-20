@@ -36,7 +36,7 @@ Create `.github/workflows/android-ci.yml` with triggers on PR and push to `main`
 - `v0.1.0` P0 visual shell + CI debug APK.
 - `v0.2.0` P1 fully offline diary.
 - `v0.3.0` P2 local food search, UPC/EAN lookup and meal photo attachments. AI drafts follow in P3.
-- `v0.4.0` account, cloud sync, MCP integration.
+- `v0.4.0` P3 ordinary meal drafts, micronutrients, and scoped USDA lookup.
 Versions are **suggested milestones, not claims of implemented features**.
 
 ## P2 device checks

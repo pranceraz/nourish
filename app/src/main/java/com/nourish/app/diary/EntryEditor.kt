@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 internal fun EntryEditor(
     date: String, original: Entry?, foods: List<Food>, onClose: () -> Unit,
     onFavorite: (Food) -> Unit, onSave: suspend (Entry, String?, Boolean, ByteArray?) -> Unit,
+    onSaveMeal: suspend (List<Entry>, ByteArray?) -> Unit = { _, _ -> error("Diary unavailable") },
     loadPhoto: suspend (String) -> ByteArray? = { null },
 ) {
     val scope = rememberCoroutineScope()
@@ -31,6 +32,8 @@ internal fun EntryEditor(
     val newFoodId = rememberSaveable { UUID.randomUUID().toString() }
     var foodId by rememberSaveable { mutableStateOf(original?.foodId ?: newFoodId) }
     var picking by rememberSaveable { mutableStateOf(original == null) }
+    var drafting by rememberSaveable { mutableStateOf(false) }
+    var details by rememberSaveable { mutableStateOf(original?.label?.details) }
     var name by rememberSaveable { mutableStateOf(original?.label?.name.orEmpty()) }
     var meal by rememberSaveable { mutableStateOf(original?.meal ?: "Breakfast") }
     var unit by rememberSaveable { mutableStateOf(original?.label?.unit ?: "Serving") }
@@ -62,6 +65,7 @@ internal fun EntryEditor(
         onClose()
     }
     fun select(food: Food) {
+        details = food.label.details
         foodId = food.id
         name = food.label.name
         unit = food.label.unit
@@ -90,14 +94,19 @@ internal fun EntryEditor(
                 Heading(if (original != null) "Edit food" else "Log food", Modifier.weight(1f))
                 TextButton(enabled = !busy && !processing, onClick = ::close) { Text("Close") }
             }
-            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking,
+            if (original == null && !drafting) PrimaryDraftButton { drafting = true }
+            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
                 onPhoto = { new ->
                     draftPhoto?.let { images.draftFile(it).delete() }
                     draftPhoto = new
                     photoChanged = true
                     picking = false
                 }, onBarcode = ::useBarcode, onWorking = { processing = it })
-            if (picking) {
+            if (drafting) {
+                MealDraftPanel(date,entryId,meal,{ meal = it }, photo = {
+                    withContext(Dispatchers.IO) { draftPhoto?.let { images.draftFile(it).readBytes() } }
+                }, hasPhoto = draftPhoto != null, onSave = onSaveMeal, onClose = ::close)
+            } else if (picking) {
                 OutlinedTextField(query, { query = it.take(100) }, Modifier.fillMaxWidth(),
                     label = { Text("Search saved foods or type barcode") }, singleLine = true)
                 val matches = remember(provider, query) { provider.search(query) }
@@ -119,22 +128,26 @@ internal fun EntryEditor(
                 barcode?.let { Text("Package · $it", style = NourishType.caption) }
                 if (barcode != null && provider.lookup(barcode!!) == null) Text("New barcode. Save the label once to reuse it next time.")
                 OutlinedTextField(name, { name = it.take(100) }, label = { Text("Food name") }, singleLine = true)
+                FoodDetails(details) { details = it }
                 Choices("Meal", meal, mealTypes) { meal = it }
                 Choices("Nutrition basis", unit, portionUnits) {
-                    if (it != unit) { unit = it; qty = if (it == "Grams") "100" else "1"; values = ArrayList(List(4) { "" }) }
+                    if (it != unit) { details = null; unit = it; qty = if (it == "Grams") "100" else "1"; values = ArrayList(List(4) { "" }) }
                 }
                 Choices("Preparation", prep, preparations) { prep = it }
                 Heading(if (unit == "Grams") "Label per 100 g" else "Label per serving", style = NourishType.heading)
                 Text("Enter the values from your food label or your own estimate.")
                 listOf("Energy (kcal)", "Protein (g)", "Carbs (g)", "Fat (g)").forEachIndexed { i, title ->
-                    NumberField(title, values[i]) { v -> values = ArrayList(values).apply { set(i, v) } }
+                    NumberField(title, values[i]) { v ->
+                        values = ArrayList(values).apply { set(i, v) }
+                        details = details?.let { org.json.JSONObject(it).put("macroSource","User-edited macros").toString() }
+                    }
                 }
                 NumberField(if (unit == "Grams") "Grams eaten" else "Servings eaten", qty) { qty = it }
                 val amounts = values.map(::parseAmount)
                 val quantity = parseAmount(qty)
                 val valid = name.isNotBlank() && amounts.all { it != null } && quantity != null && quantity > 0
                 val draft = if (valid) Entry(entryId,date,meal,foodId,
-                    Label(name.trim(),unit,prep,amounts[0]!!,amounts[1]!!,amounts[2]!!,amounts[3]!!),
+                    Label(name.trim(),unit,prep,amounts[0]!!,amounts[1]!!,amounts[2]!!,amounts[3]!!,details),
                     quantity, original?.created ?: System.currentTimeMillis()) else null
                 draft?.let { Text("Portion total · ${listOf(it).nutrition().calories} kcal", style = NourishType.strong) }
                 if (error.isNotEmpty()) Text(error)
@@ -167,7 +180,7 @@ internal fun NumberField(label: String, value: String, onChange: (String) -> Uni
 }
 
 @Composable
-private fun Choices(title: String, value: String, options: List<String>, onChange: (String) -> Unit) {
+internal fun Choices(title: String, value: String, options: List<String>, onChange: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         OutlinedButton(onClick = { open = true }) { Text("$title · $value ▾") }
@@ -175,4 +188,10 @@ private fun Choices(title: String, value: String, options: List<String>, onChang
             options.forEach { DropdownMenuItem(text = { Text(it) }, onClick = { onChange(it); open = false }) }
         }
     }
+}
+
+
+@Composable
+private fun PrimaryDraftButton(onClick: () -> Unit) {
+    com.nourish.app.ui.PrimaryPillButton("Build a meal · USDA & AI", onClick)
 }

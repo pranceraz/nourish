@@ -134,24 +134,24 @@ internal fun NourishApp(
             Crossfade(destination, animationSpec = NourishMotion.selection, label = "tab change") { screen ->
                 when (screen) {
                     Destination.Today -> TodayScreen(date, if (prefs.demo) DemoNutrition.starterMeals else null,
-                        todayScroll, week.filter { it.date == date.toString() }, prefs.goals)
+                        todayScroll, week.filter { it.date == date.toString() }, prefs)
                     Destination.Diary -> DiaryScreen(LocalDate.parse(diaryDate), day,
                         onDate = { selected = it.toString() }, onEdit = {
                             editId = it.id; editorDate = diaryDate; quickAddOpen = true
                         }, onDuplicate = { entry ->
                             val id = UUID.randomUUID().toString()
                             write { requireNotNull(dao).duplicate(entry.id, id) }
-                        }, onDelete = { entry -> write { requireNotNull(dao).delete(entry.id) } }, onAdd = ::add)
+                        }, onDelete = { entry -> write { requireNotNull(dao).delete(entry.id) } }, onAdd = ::add, prefs = prefs)
                     Destination.Insights -> PageContent("Insights") {
                         if (week.isEmpty()) EmptyState("A view of your week",
                             "Log food this week to see your daily totals.", Glyph.Insights, colors.blue)
-                        else NutritionSparkline(date, (6 downTo 0).map { offset ->
+                        else if ("208" !in prefs.hidden) NutritionSparkline(date, (6 downTo 0).map { offset ->
                             week.filter { it.date == date.minusDays(offset.toLong()).toString() }.nutrition().calories
                         }, sample = false)
+                        NutrientSummary(week,date,prefs,weekly = true)
                     }
                     Destination.Settings -> SettingsScreen(prefs.demo,
-                        onDemoChanged = { enabled -> write { requireNotNull(store).demo(enabled) } },
-                        goals = prefs.goals, onSaveGoals = { requireNotNull(store).goals(it) })
+                        onDemoChanged = { enabled -> write { requireNotNull(store).demo(enabled) } })
                 }
             }
         }
@@ -161,6 +161,11 @@ internal fun NourishApp(
             if (editId == null || original != null) EntryEditor(editorDate, original, foods,
                 onClose = { quickAddOpen = false },
                 onFavorite = { food -> write { dao.favorite(food.id, !food.favorite) } },
+                onSaveMeal = { entries, photo ->
+                    dao.saveMeal(entries,photo)
+                    selected = editorDate
+                    destination = Destination.Diary
+                },
                 loadPhoto = dao::photo,
                 onSave = { entry, code, changed, jpeg ->
                     dao.saveWithInputs(entry, editId != null, code, changed, jpeg)
@@ -300,10 +305,11 @@ private fun PageContent(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingsScreen(showDemo: Boolean, onDemoChanged: (Boolean) -> Unit, goals: com.nourish.app.model.Nutrition, onSaveGoals: suspend (List<Int>) -> Unit) {
+private fun SettingsScreen(showDemo: Boolean, onDemoChanged: (Boolean) -> Unit) {
     val colors = nourishColors
     PageContent("Settings") {
-        GoalPanel(goals, onSaveGoals)
+        NutrientSettings()
+        ConnectionSettings()
         Column(
             Modifier.fillMaxWidth().clip(NourishShape.panel).background(colors.panel).padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -8,3 +8,7 @@ local.properties
 *.aab
 *.jks
 *.keystore
+
+__pycache__/
+*.pyc
+.env

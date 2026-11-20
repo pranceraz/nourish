@@ -24,7 +24,7 @@ class NourishAppTest {
         }
         if (phase != "reopen") {
             compose.onNodeWithContentDescription("Quick add meal").performClick()
-            if (compose.onAllNodesWithText("Create a custom food").fetchSemanticsNodes().isNotEmpty()) tap("Create a custom food")
+            if (compose.onAllNodesWithText("Create a custom food").fetchSemanticsNodes().isNotEmpty()) compose.onNodeWithText("Create a custom food").performScrollTo().performClick()
             field("Food name","Apricot yogurt")
             field("Energy (kcal)","160")
             field("Protein (g)","12")

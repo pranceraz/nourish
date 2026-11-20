@@ -48,6 +48,8 @@ import com.nourish.app.ui.theme.NourishMotion
 import com.nourish.app.ui.theme.NourishShape
 import com.nourish.app.ui.theme.NourishType
 import com.nourish.app.ui.theme.nourishColors
+import com.nourish.app.diary.Preferences
+import com.nourish.app.diary.NutrientSummary
 import com.nourish.app.diary.Entry
 import com.nourish.app.diary.nutrition
 import java.text.NumberFormat
@@ -60,7 +62,7 @@ internal fun TodayScreen(
     demoMeals: List<DemoFood>?,
     state: LazyListState,
     entries: List<Entry> = emptyList(),
-    goals: Nutrition = Nutrition(),
+    prefs: Preferences = Preferences(),
 ) {
     val colors = nourishColors
     LazyColumn(state = state) {
@@ -69,9 +71,15 @@ internal fun TodayScreen(
         }
         val meals = demoMeals ?: entries.map { DemoFood(it.label.name, it.meal, listOf(it).nutrition()) }
         val total = if (demoMeals == null) entries.nutrition() else DemoNutrition.total(demoMeals)
-        val goal = if (demoMeals == null) goals else DemoNutrition.goal
-        item { HeroMetric(total.calories, goal.calories) }
-        item { MacroHighlights(total, goal) }
+        val goal = if (demoMeals == null) Nutrition(
+            prefs.target("208",date)?.toDoubleOrNull()?.toInt() ?: 0,
+            prefs.target("203",date)?.toDoubleOrNull()?.toInt() ?: 0,
+            prefs.target("205",date)?.toDoubleOrNull()?.toInt() ?: 0,
+            prefs.target("204",date)?.toDoubleOrNull()?.toInt() ?: 0,
+        ) else DemoNutrition.goal
+        if ("208" !in prefs.hidden) item { HeroMetric(total.calories, goal.calories) }
+        if (listOf("203","204","205").any { it !in prefs.hidden }) item { MacroHighlights(total, goal, prefs.hidden) }
+        if (demoMeals == null) item { Column(Modifier.padding(horizontal = 20.dp)) { NutrientSummary(entries,date,prefs) } }
         if (demoMeals == null && entries.isEmpty()) {
             item {
                 EmptyState(
@@ -207,7 +215,7 @@ internal fun HeroMetric(calories: Int, goal: Int, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun MacroHighlights(total: Nutrition, goal: Nutrition) {
+private fun MacroHighlights(total: Nutrition, goal: Nutrition, hidden: Set<String>) {
     val colors = nourishColors
     Column(Modifier.fillMaxWidth().padding(start = 20.dp, top = 19.dp, end = 20.dp)) {
         Heading("Macro mix")
@@ -216,15 +224,15 @@ private fun MacroHighlights(total: Nutrition, goal: Nutrition) {
             val stack = maxWidth < 290.dp || LocalDensity.current.fontScale > 1.3f
             if (stack) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PastelMetricCard("Protein", total.protein, goal.protein, colors.pink, Sticker.Petal, Modifier.fillMaxWidth())
-                    PastelMetricCard("Carbs", total.carbs, goal.carbs, colors.blue, Sticker.Burst, Modifier.fillMaxWidth())
-                    PastelMetricCard("Fat", total.fat, goal.fat, colors.mint, Sticker.Heart, Modifier.fillMaxWidth())
+                    if ("203" !in hidden) PastelMetricCard("Protein", total.protein, goal.protein, colors.pink, Sticker.Petal, Modifier.fillMaxWidth())
+                    if ("205" !in hidden) PastelMetricCard("Carbs", total.carbs, goal.carbs, colors.blue, Sticker.Burst, Modifier.fillMaxWidth())
+                    if ("204" !in hidden) PastelMetricCard("Fat", total.fat, goal.fat, colors.mint, Sticker.Heart, Modifier.fillMaxWidth())
                 }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PastelMetricCard("Protein", total.protein, goal.protein, colors.pink, Sticker.Petal, Modifier.weight(1f))
-                    PastelMetricCard("Carbs", total.carbs, goal.carbs, colors.blue, Sticker.Burst, Modifier.weight(1f))
-                    PastelMetricCard("Fat", total.fat, goal.fat, colors.mint, Sticker.Heart, Modifier.weight(1f))
+                    if ("203" !in hidden) PastelMetricCard("Protein", total.protein, goal.protein, colors.pink, Sticker.Petal, Modifier.weight(1f))
+                    if ("205" !in hidden) PastelMetricCard("Carbs", total.carbs, goal.carbs, colors.blue, Sticker.Burst, Modifier.weight(1f))
+                    if ("204" !in hidden) PastelMetricCard("Fat", total.fat, goal.fat, colors.mint, Sticker.Heart, Modifier.weight(1f))
                 }
             }
         }
