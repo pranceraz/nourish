@@ -75,7 +75,7 @@ class InputFlowTest {
             waitText("Test lentils")
             compose.onNodeWithContentDescription("Quick add meal").performClick()
             field("Search saved foods or type barcode", "LENTIL")
-            compose.onNodeWithText("Test lentils").assertExists()
+            compose.onNode(hasText("Test lentils") and hasClickAction()).assertExists()
             field("Search saved foods or type barcode", "5901234123457")
             tap("Use barcode")
             compose.onNode(hasSetTextAction() and hasText("Test lentils")).assertExists()
