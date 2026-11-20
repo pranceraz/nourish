@@ -9,4 +9,4 @@ When a meaningful error affects the task, explain it to the user in one to three
 
 Distinguish confirmed causes from things you are still checking. If the failure is recoverable, continue working and report when recovery succeeds. If a verification step is still running, say so. If you need the user's help, say exactly what they need to do and why.
 
-Example: “GitHub started the check, but the runner was missing Android’s SDK installer. I added a pinned installer and pushed the fix. GitHub has started a fresh run on the same pull request.”
+A setup error update could read “GitHub started the check, but the runner was missing Android’s SDK installer. I added a pinned installer and pushed the fix. GitHub has started a fresh run on the same pull request.”

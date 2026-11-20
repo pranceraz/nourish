@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -47,9 +48,9 @@ import com.nourish.app.ui.theme.NourishMotion
 import com.nourish.app.ui.theme.NourishShape
 import com.nourish.app.ui.theme.NourishType
 import com.nourish.app.ui.theme.nourishColors
+import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 internal fun TodayScreen(
@@ -107,6 +108,7 @@ internal fun TodayScreen(
 @Composable
 private fun TodayHeader(date: LocalDate, showDemo: Boolean) {
     val colors = nourishColors
+    val locale = LocalLocale.current.platformLocale
     Column(
         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -137,7 +139,7 @@ private fun TodayHeader(date: LocalDate, showDemo: Boolean) {
         Column {
             Heading("Today", style = NourishType.screen)
             Text(
-                date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())),
+                date.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", locale)),
                 style = NourishType.body,
                 color = colors.muted,
             )
@@ -293,8 +295,12 @@ internal fun NutritionSparkline(date: LocalDate, calories: List<Int>, modifier: 
     val colors = nourishColors
     val maximum = maxOf(calories.max(), DemoNutrition.goal.calories)
     val days = calories.indices.map { date.minusDays((calories.lastIndex - it).toLong()) }
+    val locale = LocalLocale.current.platformLocale
+    val kcalFormat = NumberFormat.getIntegerInstance(locale)
+    val weekdayFormat = DateTimeFormatter.ofPattern("EEEE", locale)
+    val narrowDayFormat = DateTimeFormatter.ofPattern("EEEEE", locale)
     val readings = days.zip(calories).joinToString { (day, value) ->
-        "${day.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))}, ${value.formatted()} kcal"
+        "${day.format(weekdayFormat)}, ${kcalFormat.format(value)} kcal"
     }
     Column(
         modifier.fillMaxWidth().clip(NourishShape.panel).background(colors.lilac).padding(16.dp),
@@ -319,7 +325,7 @@ internal fun NutritionSparkline(date: LocalDate, calories: List<Int>, modifier: 
                             .background(if (latest) colors.ink else colors.ink.copy(alpha = 0.46f)),
                     )
                     Text(
-                        days[index].format(DateTimeFormatter.ofPattern("EEEEE", Locale.getDefault())),
+                        days[index].format(narrowDayFormat),
                         style = NourishType.caption,
                         color = colors.ink,
                     )

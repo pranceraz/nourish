@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.nourish.app.ui.formatted
+import java.text.NumberFormat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,15 +22,16 @@ class NourishAppTest {
 
     @Test
     fun sampleAddUpdatesTodayAndCanBeHiddenInSettings() {
+        val format = NumberFormat.getIntegerInstance()
         compose.onNodeWithText("DEMO DATA").assertIsDisplayed()
-        compose.onNodeWithText(1_482.formatted()).assertIsDisplayed()
+        compose.onNodeWithText(format.format(1_482)).assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Quick add meal").performClick()
         compose.onNodeWithText("Quick add").assertIsDisplayed()
         compose.onNodeWithText("Browse sample foods").performClick()
         compose.onNodeWithText("Hummus & crackers").performClick().assertIsSelected()
         compose.onNodeWithText("Add to demo").performClick()
-        compose.onNodeWithText(1_692.formatted()).assertIsDisplayed()
+        compose.onNodeWithText(format.format(1_692)).assertIsDisplayed()
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(7)
         compose.onNodeWithText("Hummus & crackers").assertIsDisplayed()
 

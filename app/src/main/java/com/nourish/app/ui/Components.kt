@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -33,7 +34,8 @@ import com.nourish.app.ui.theme.NourishType
 import com.nourish.app.ui.theme.nourishColors
 import java.text.NumberFormat
 
-internal fun Int.formatted(): String = NumberFormat.getIntegerInstance().format(this)
+@Composable
+internal fun Int.formatted(): String = NumberFormat.getIntegerInstance(LocalLocale.current.platformLocale).format(this)
 
 @Composable
 internal fun Heading(text: String, modifier: Modifier = Modifier, style: TextStyle = NourishType.section) {
