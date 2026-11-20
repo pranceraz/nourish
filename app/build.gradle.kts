@@ -28,11 +28,13 @@ android {
         applicationId = "com.nourish.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BUILD_ID", "\"${buildId.get()}\"")
     }
+
+    sourceSets["androidTest"].assets.srcDir("schemas")
 
     buildFeatures {
         compose = true
@@ -51,6 +53,8 @@ dependencies {
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     implementation(libs.preferences)
+    implementation(libs.barcode.core)
+    implementation(libs.exif)
     implementation(platform(libs.compose.bom))
     implementation(libs.activity.compose)
     implementation(libs.compose.animation)

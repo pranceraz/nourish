@@ -35,6 +35,13 @@ Create `.github/workflows/android-ci.yml` with triggers on PR and push to `main`
 ## Versions
 - `v0.1.0` P0 visual shell + CI debug APK.
 - `v0.2.0` P1 fully offline diary.
-- `v0.3.0` camera/text/food search + AI drafts.
+- `v0.3.0` P2 local food search, UPC/EAN lookup and meal photo attachments. AI drafts follow in P3.
 - `v0.4.0` account, cloud sync, MCP integration.
 Versions are **suggested milestones, not claims of implemented features**.
+
+## P2 device checks
+
+1. Upgrade a P1 install signed with the same key. Check that a favorite and an existing diary entry remain.
+2. In airplane mode, scan a UPC/EAN or type its digits. Save its label, scan again, change the portion, and check the total. Search by part of the food name.
+3. Take or pick a photo. Cancel once and verify the draft remains. Save a photo, restart, then use Diary → Actions → Edit to view or remove it. A duplicate retains its own photo after the original is deleted.
+4. With no camera handler, an unreadable barcode, or an inaccessible image, verify that manual logging still works. The emulator test supplies synthetic external camera/picker results. Use a physical phone to evaluate camera focus and lighting.

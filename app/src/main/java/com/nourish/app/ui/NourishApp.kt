@@ -161,8 +161,9 @@ internal fun NourishApp(
             if (editId == null || original != null) EntryEditor(editorDate, original, foods,
                 onClose = { quickAddOpen = false },
                 onFavorite = { food -> write { dao.favorite(food.id, !food.favorite) } },
-                onSave = { entry ->
-                    dao.save(entry, editId != null)
+                loadPhoto = dao::photo,
+                onSave = { entry, code, changed, jpeg ->
+                    dao.saveWithInputs(entry, editId != null, code, changed, jpeg)
                     selected = editorDate
                     destination = Destination.Diary
                 })

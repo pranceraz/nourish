@@ -76,21 +76,25 @@ Define units precisely; distinguish grams from servings, raw vs cooked; prevent 
 ### P3 — AI food drafts
 - Build minimal FastAPI backend with typed API schemas, a fake provider for local tests, OpenAI vision for food identification and textual parsing, USDA lookup, normalized nutrient calculation, draft review/edit/confirm in Android.
 - No privileged API secrets in APK. Clearly label estimates, ingredients/quantity assumptions, uncertain image results. Keep API logging sanitized.
+- Extend nutritional snapshots, portion calculations and rollups to vitamins and minerals, with explicit units, provenance, and support for unknown or partial values. Persist per-nutrient display choices. Add reviewable GPT-suggested targets with user confirmation and effective dates.
 
 ### P4 — Accounts, cloud sync, MCP
 - Choose hosted PostgreSQL (e.g. Supabase) and secure per-user authentication. Design one source-of-truth, offline operations queue, conflict handling, deletion tombstones, idempotent retries.
 - MCP remote tools: `search_food`, `log_meal`, `get_daily_summary`, `get_meals`, `edit_meal`, `delete_meal`, `get_nutrition_trends`. Enforce user ownership and confirmation for destructive writes. ChatGPT integration depends on account compatibility; no claim that it works until verified.
 - The phone's Room database is private; ChatGPT connects through authenticated server-side services, not directly to the phone.
+- In an authorized ChatGPT conversation, accept a meal photo or barcode and a portion prompt. GPT can populate a draft from a label, provider lookup or clearly identified model estimates, including micronutrients. Support conversational corrections, one confirmed write, and a receipt that resolves to the same entry in Nourish. Allow separately confirmed goal proposals through the connection.
 
 ### P5 — Polish and release readiness
 - Animated nutrient progress, refined sheets/gestures, screenshots, accessibility audit, release configurations, realistic startup/scroll benchmarks, Baseline Profiles, export/backup/delete, notification opt-in.
 - Deliver interruptible page transitions, press-and-hold feedback on interactive controls, and a resizable Android home-screen widget showing Today’s local totals. Follow the P5 interaction and widget requirements in `design/DESIGN.md`.
+- Add an interactive offline Diary month calendar and horizontally swipeable Today panels with labeled alternatives to gestures. Use each user’s nutrient visibility preferences. See `design/DESIGN.md` for navigation and accessibility behavior.
 
 ## Acceptance criteria by phase
 - P0: Gradle build succeeds; home preview matches the design direction; navigation works; APK available from CI; no placeholder interactions misrepresented as features.
 - P1: user logs a meal offline, closes/reopens app, edits it, sees correct totals, deletes it; tests cover same scenarios.
-- P3: photo/text creates a **reviewable** draft, source values labeled; confirmation saves once; network failures don't destroy local data.
+- P3: hiding and restoring a nutrient preserves its history and goal. Partial source coverage is visible. Proposed targets take effect after confirmation. Photo/text creates a **reviewable** draft, source values labeled; confirmation saves once; network failures don't destroy local data.
 - P4: a cloud-authorized MCP write updates the same diary after Android sync, with isolation between test users.
+- P5: selecting a logged or empty day opens the correct diary date. Swiping and tapping panel selectors show identical totals and both work with reduced motion.
 
 ## Delivery requirements for Codex
 Every PR should summarize completed scope, screenshots for UI changes, exact commands run/test results, a downloadable debug APK through CI after P0, known issues, and next step. Prefer small reviewable PRs. `main` stays buildable. Never claim unrun tests passed or inaccessible design content was inspected.
