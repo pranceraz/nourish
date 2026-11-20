@@ -15,7 +15,6 @@ zxing = "3.5.3"
 exif = "1.4.2"
 
 [libraries]
-room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 barcode-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 exif = { module = "androidx.exifinterface:exifinterface", version.ref = "exif" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
