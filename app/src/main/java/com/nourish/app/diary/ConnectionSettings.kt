@@ -24,6 +24,7 @@ internal fun ConnectionSettings() {
     var key by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var connected by remember { mutableStateOf(service.origin.isNotEmpty()) }
+    var receiveChat by remember { mutableStateOf(service.chatEnabled) }
     var busy by remember { mutableStateOf(false) }
     fun run(action: suspend () -> Unit) {
         if (busy) return
@@ -45,12 +46,28 @@ internal fun ConnectionSettings() {
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false), singleLine = true)
                 Button(enabled = !busy, onClick = { run {
                     service.connect(address,token.trim())
+                    receiveChat = false
                     connected = true
                     token = ""
                     status = "Connection settings saved."
                 } }) { Text("Save connection") }
             } else {
                 Text(service.origin)
+                Text("ChatGPT diary", style = com.nourish.app.ui.theme.NourishType.heading)
+                Text("Connect ChatGPT to ${service.origin}/chat/mcp using OAuth. Confirm a draft in chat, then open Nourish to receive it.")
+                OutlinedButton(enabled = !busy,onClick = {
+                    if (receiveChat) status = "Incoming meals paused."
+                    service.chatEnabled = !receiveChat
+                    receiveChat = service.chatEnabled
+                    if (receiveChat) run {
+                        val count = ChatSync.receive(context)
+                        status = "Received $count confirmed meals."
+                    }
+                }) { Text(if (receiveChat) "Pause incoming meals" else "Receive confirmed meals on this device") }
+                if (receiveChat) TextButton(enabled = !busy,onClick = { run {
+                    val count = ChatSync.receive(context)
+                    status = "Up to date · $count new meals."
+                } }) { Text("Check for meals now") }
                 Text("Optional USDA key for authorized GPT food lookup. Saving sends it to this server for encrypted storage. Meal drafts use the bundled USDA catalog.")
                 OutlinedTextField(key, { key = it }, label = { Text("Personal USDA API key") },
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false), singleLine = true)

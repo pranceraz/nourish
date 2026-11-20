@@ -86,6 +86,8 @@ Lead with everyday ingredients and mixed dishes. Search an offline USDA survey-f
 - The phone's Room database is private; ChatGPT connects through authenticated server-side services, not directly to the phone.
 - In an authorized ChatGPT conversation, accept a meal photo or barcode and a portion prompt. GPT can populate a draft from a label, provider lookup or clearly identified model estimates, including micronutrients. Support conversational corrections, one confirmed write, and a receipt that resolves to the same entry in Nourish. Allow separately confirmed goal proposals through the connection.
 
+The initial P4 delivery covers inbound confirmed meals on a private single-host server. It uses scoped OAuth for chat and an opt-in foreground import on Android. Hosted accounts, two-way edits and deletion, diary queries, trends and goal writes remain in P4.
+
 ### P5 — Polish and release readiness
 - Animated nutrient progress, refined sheets/gestures, screenshots, accessibility audit, release configurations, realistic startup/scroll benchmarks, Baseline Profiles, export/backup/delete, notification opt-in.
 - Deliver interruptible page transitions, press-and-hold feedback on interactive controls, and a resizable Android home-screen widget showing Today’s local totals. Follow the P5 interaction and widget requirements in `design/DESIGN.md`.

@@ -55,8 +55,33 @@ internal fun List<Entry>.nutrition(): Nutrition {
     return Nutrition(sum { it.kcal }, sum { it.protein }, sum { it.carbs }, sum { it.fat })
 }
 
+@Entity(tableName = "chat_cursor")
+internal data class ChatCursor(@PrimaryKey val slot: Int, val account: String, val sequence: Long)
+
 @Dao
 internal abstract class DiaryDao {
+    @Query("SELECT * FROM chat_cursor WHERE slot=1")
+    abstract suspend fun chatCursor(): ChatCursor?
+    @Upsert abstract suspend fun setChatCursor(cursor: ChatCursor)
+
+    @Transaction
+    open suspend fun receiveChat(account: String, meals: List<IncomingMeal>): Int {
+        val existing = chatCursor()
+        if (existing != null && existing.account != account) {
+            throw ServiceError("This diary is linked to a different account. Reconnect to the original account to receive meals.")
+        }
+        var sequence = existing?.sequence ?: 0
+        var received = 0
+        for (meal in meals) {
+            if (meal.sequence <= sequence) continue
+            saveMeal(meal.entries,null)
+            sequence = meal.sequence
+            received++
+        }
+        if (existing == null || received > 0) setChatCursor(ChatCursor(1,account,sequence))
+        return received
+    }
+
     @Query("SELECT * FROM entries WHERE date BETWEEN :from AND :through ORDER BY date, created, id")
     abstract fun entries(from: String, through: String): Flow<List<Entry>>
     @Query("SELECT * FROM foods ORDER BY favorite DESC, lastUsed DESC, id")
@@ -128,8 +153,8 @@ internal abstract class DiaryDao {
     }
 }
 
-@Database(entities = [Entry::class, Food::class, MealPhoto::class], version = 3, exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)])
+@Database(entities = [Entry::class, Food::class, MealPhoto::class, ChatCursor::class], version = 4, exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)])
 internal abstract class DiaryDatabase : RoomDatabase() {
     abstract fun diary(): DiaryDao
     companion object {

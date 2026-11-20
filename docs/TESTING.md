@@ -45,3 +45,9 @@ Versions are **suggested milestones, not claims of implemented features**.
 2. In airplane mode, scan a UPC/EAN or type its digits. Save its label, scan again, change the portion, and check the total. Search by part of the food name.
 3. Take or pick a photo. Cancel once and verify the draft remains. Save a photo, restart, then use Diary → Actions → Edit to view or remove it. A duplicate retains its own photo after the original is deleted.
 4. With no camera handler, an unreadable barcode, or an inaccessible image, verify that manual logging still works. The emulator test supplies synthetic external camera/picker results. Use a physical phone to evaluate camera focus and lighting.
+
+## v0.5.0 confirmed chat meals
+
+Run `python -m unittest discover -s server -t .` after installing the server requirements. The official MCP client initializes and discovers tools. Signed-token tests exercise owner isolation, corrections, expiry, retries and both saving modes. The key discovery response is supplied by the test. The generated phone feed is checked against the exact fixture the emulator consumes.
+
+The Android CI emulator opens the test diary from disk, renders a confirmed 279 kcal breakfast, then tests a second delivery, local deletion, and account mismatch. Download the synthetic breakfast screenshot from the **diary-preview** artifact. To exercise the production network path, follow the private server setup, connect a supported ChatGPT account and a phone, correct a portion in chat, confirm once, and check that the selected diary date shows the revised total. Pause delivery, confirm another meal, and resume to receive it.
