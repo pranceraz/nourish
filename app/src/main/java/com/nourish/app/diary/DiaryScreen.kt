@@ -22,6 +22,7 @@ import java.time.format.FormatStyle
 internal fun DiaryScreen(
     date: LocalDate, entries: List<Entry>, onDate: (LocalDate) -> Unit, onEdit: (Entry) -> Unit,
     onDuplicate: (Entry) -> Unit, onDelete: (Entry) -> Unit, onAdd: () -> Unit,
+    prefs: Preferences = Preferences(),
 ) {
     val context = LocalContext.current
     val colors = nourishColors
@@ -41,10 +42,12 @@ internal fun DiaryScreen(
             val total = entries.nutrition()
             Column(Modifier.fillMaxWidth().clip(NourishShape.panel).background(colors.butter).padding(18.dp)) {
                 Text("DAILY TOTAL", style = NourishType.eyebrow, color = colors.ink)
-                Text("${total.calories} kcal", style = NourishType.screen, color = colors.ink)
-                Text("Protein ${total.protein} g  ·  Carbs ${total.carbs} g  ·  Fat ${total.fat} g", color = colors.ink)
+                if ("208" !in prefs.hidden) Text("${total.calories} kcal", style = NourishType.screen, color = colors.ink)
+                val macros = listOf("203" to "Protein ${total.protein} g","205" to "Carbs ${total.carbs} g","204" to "Fat ${total.fat} g")
+                Text(macros.filter { it.first !in prefs.hidden }.joinToString(" · ") { it.second },color = colors.ink)
             }
         }
+        item { NutrientSummary(entries,date,prefs) }
         if (entries.isEmpty()) item {
             EmptyState("Your meal log", "Add the first food for this day.", Glyph.Bowl, colors.peach)
             PrimaryPillButton("Log food", onAdd)

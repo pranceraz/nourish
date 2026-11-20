@@ -1,0 +1,27 @@
+number	name	unit	group
+208	Energy	kcal	Energy
+203	Protein	g	Macros
+205	Carbs	g	Macros
+204	Fat	g	Macros
+320	Vitamin A (RAE)	µg	Vitamins
+404	Vitamin B1	mg	Vitamins
+405	Vitamin B2	mg	Vitamins
+406	Niacin (B3)	mg	Vitamins
+410	Pantothenic acid (B5)	mg	Vitamins
+415	Vitamin B6	mg	Vitamins
+417	Folate (B9)	µg	Vitamins
+418	Vitamin B12	µg	Vitamins
+401	Vitamin C	mg	Vitamins
+328	Vitamin D	µg	Vitamins
+323	Vitamin E	mg	Vitamins
+430	Vitamin K	µg	Vitamins
+301	Calcium	mg	Minerals
+303	Iron	mg	Minerals
+304	Magnesium	mg	Minerals
+305	Phosphorus	mg	Minerals
+306	Potassium	mg	Minerals
+307	Sodium	mg	Minerals
+309	Zinc	mg	Minerals
+312	Copper	mg	Minerals
+315	Manganese	mg	Minerals
+317	Selenium	µg	Minerals

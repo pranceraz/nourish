@@ -19,6 +19,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,7 +67,9 @@ internal val nourishColors: NourishColors
     @Composable get() = LocalNourishColors.current
 
 private val Display = FontFamily(Font(R.font.bricolage_extra_bold, FontWeight.ExtraBold))
-private val Body = FontFamily.SansSerif
+private val Body = FontFamily(listOf(FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold).map { weight ->
+    Font(R.font.inter_variable, weight, variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)))
+})
 
 internal object NourishType {
     val hero = TextStyle(
@@ -144,7 +147,11 @@ internal fun NourishTheme(
         MaterialTheme(
             colorScheme = scheme,
             motionScheme = MotionScheme.expressive(),
-            typography = Typography(titleLarge = NourishType.heading, bodyMedium = NourishType.body),
+            typography = Typography(
+                titleLarge = NourishType.heading, titleMedium = NourishType.strong, titleSmall = NourishType.strong,
+                bodyLarge = NourishType.body, bodyMedium = NourishType.body, bodySmall = NourishType.caption,
+                labelLarge = NourishType.strong, labelMedium = NourishType.caption, labelSmall = NourishType.tab,
+            ),
             shapes = Shapes(small = NourishShape.small, medium = NourishShape.panel, large = NourishShape.dock),
             content = content,
         )

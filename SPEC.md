@@ -74,6 +74,8 @@ Define units precisely; distinguish grams from servings, raw vs cooked; prevent 
 - Food search using locally cached entries and a provider adapter; barcode scanner when nutrition provider is configured; camera/gallery intake, permissions/error handling. Core manual flow remains functional offline.
 
 ### P3 — AI food drafts
+
+Lead with everyday ingredients and mixed dishes. Search an offline USDA survey-food catalog without a key. Review estimated ingredients and portions with one combined total, then save as separate items or as one complete dish. Keep the optional personal USDA key in the authenticated user’s server-side vault for a read-only GPT lookup through MCP. Continue packaged-product provider expansion later.
 - Build minimal FastAPI backend with typed API schemas, a fake provider for local tests, OpenAI vision for food identification and textual parsing, USDA lookup, normalized nutrient calculation, draft review/edit/confirm in Android.
 - No privileged API secrets in APK. Clearly label estimates, ingredients/quantity assumptions, uncertain image results. Keep API logging sanitized.
 - Extend nutritional snapshots, portion calculations and rollups to vitamins and minerals, with explicit units, provenance, and support for unknown or partial values. Persist per-nutrient display choices. Add reviewable GPT-suggested targets with user confirmation and effective dates.
