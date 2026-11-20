@@ -19,6 +19,9 @@ class NourishAppTest {
 
     @Test fun offlineDiary() {
         val phase = InstrumentationRegistry.getArguments().getString("phase")
+        compose.waitUntil(30000) {
+            compose.onAllNodesWithContentDescription("Quick add meal").fetchSemanticsNodes().isNotEmpty()
+        }
         if (phase != "reopen") {
             compose.onNodeWithContentDescription("Quick add meal").performClick()
             if (compose.onAllNodesWithText("Create a custom food").fetchSemanticsNodes().isNotEmpty()) tap("Create a custom food")
@@ -33,6 +36,9 @@ class NourishAppTest {
             if (phase == "create") return
             compose.activityRule.scenario.recreate()
         } else tap("Diary")
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithText("Apricot yogurt").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Apricot yogurt").assertIsDisplayed()
         compose.onNodeWithText("240 kcal").assertIsDisplayed()
         if (phase == "reopen") {
@@ -48,6 +54,8 @@ class NourishAppTest {
         tap("Actions")
         tap("Delete")
         tap("Delete entry")
-        compose.onNodeWithText("Your meal log").assertIsDisplayed()
+        compose.waitUntil(15000) {
+            compose.onAllNodesWithText("Your meal log").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

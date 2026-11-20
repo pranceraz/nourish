@@ -20,7 +20,7 @@ internal fun GoalPanel(goals: Nutrition, onSave: suspend (List<Int>) -> Unit) {
     val labels = listOf("Energy (kcal)", "Protein (g)", "Carbs (g)", "Fat (g)")
     val saved = listOf(goals.calories, goals.protein, goals.carbs, goals.fat)
     var editing by rememberSaveable { mutableStateOf(false) }
-    var values by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    var values by rememberSaveable { mutableStateOf<List<String>>(arrayListOf()) }
     var error by rememberSaveable { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().clip(NourishShape.panel).background(nourishColors.panel).padding(18.dp),

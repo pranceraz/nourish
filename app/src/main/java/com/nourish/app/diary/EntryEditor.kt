@@ -33,7 +33,7 @@ internal fun EntryEditor(
     var prep by rememberSaveable { mutableStateOf(original?.label?.preparation ?: "Unspecified") }
     var qty by rememberSaveable { mutableStateOf(original?.quantity?.let(::amountText) ?: "1") }
     fun numbers(label: Label?) = label?.let { listOf(it.kcal,it.protein,it.carbs,it.fat).map(::amountText) } ?: List(4) { "" }
-    var values by rememberSaveable { mutableStateOf(ArrayList(numbers(original?.label))) }
+    var values by rememberSaveable { mutableStateOf<List<String>>(ArrayList(numbers(original?.label))) }
     var busy by remember { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf("") }
     ModalBottomSheet(

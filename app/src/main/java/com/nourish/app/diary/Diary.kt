@@ -78,7 +78,9 @@ internal abstract class DiaryDao {
         require(label.name.isNotBlank() && label.name.length <= 100 && label.unit in portionUnits &&
             label.preparation in preparations && listOf(label.kcal, label.protein, label.carbs, label.fat).all { it in 0..99_999_999 })
         val catalog = food(value.foodId)
-        storeFood(Food(value.foodId, label, System.currentTimeMillis(), catalog?.favorite ?: false))
+        // A quantity-only edit must not replace a newer reusable food label.
+        val catalogLabel = if (catalog != null && existing?.label == label) catalog.label else label
+        storeFood(Food(value.foodId, catalogLabel, System.currentTimeMillis(), catalog?.favorite ?: false))
         if (editing) update(value) else insert(value)
     }
 

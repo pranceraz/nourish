@@ -67,6 +67,11 @@ internal fun TodayScreen(
         item {
             TodayHeader(date, showDemo = demoMeals != null)
         }
+        val meals = demoMeals ?: entries.map { DemoFood(it.label.name, it.meal, listOf(it).nutrition()) }
+        val total = if (demoMeals == null) entries.nutrition() else DemoNutrition.total(demoMeals)
+        val goal = if (demoMeals == null) goals else DemoNutrition.goal
+        item { HeroMetric(total.calories, goal.calories) }
+        item { MacroHighlights(total, goal) }
         if (demoMeals == null && entries.isEmpty()) {
             item {
                 EmptyState(
@@ -78,11 +83,6 @@ internal fun TodayScreen(
                 )
             }
         } else {
-            val meals = demoMeals ?: entries.map { DemoFood(it.label.name, it.meal, listOf(it).nutrition()) }
-            val total = if (demoMeals == null) entries.nutrition() else DemoNutrition.total(demoMeals)
-            val goal = if (demoMeals == null) goals else DemoNutrition.goal
-            item { HeroMetric(total.calories, goal.calories) }
-            item { MacroHighlights(total, goal) }
             item {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 6.dp),
@@ -91,7 +91,7 @@ internal fun TodayScreen(
                 ) {
                     Heading("Today’s meals", Modifier.weight(1f))
                     Text(
-                        if (meals.size == 1) "1 meal" else "${meals.size} meals",
+                        if (meals.size == 1) "1 food" else "${meals.size} foods",
                         style = NourishType.caption,
                         color = colors.muted,
                     )
@@ -178,7 +178,7 @@ internal fun HeroMetric(calories: Int, goal: Int, modifier: Modifier = Modifier)
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(minFontSize = 30.sp, maxFontSize = 92.sp),
             )
-            Text("kcal eaten", color = colors.ink, style = NourishType.strong)
+            Text("kcal logged", color = colors.ink, style = NourishType.strong)
             if (goal > 0) Box(
                 Modifier
                     .fillMaxWidth()
