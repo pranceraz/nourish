@@ -95,7 +95,7 @@ internal fun EntryEditor(
                 TextButton(enabled = !busy && !processing, onClick = ::close) { Text("Close") }
             }
             if (original == null && !drafting) PrimaryDraftButton { drafting = true }
-            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking,
+            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
                 onPhoto = { new ->
                     draftPhoto?.let { images.draftFile(it).delete() }
                     draftPhoto = new
@@ -137,7 +137,10 @@ internal fun EntryEditor(
                 Heading(if (unit == "Grams") "Label per 100 g" else "Label per serving", style = NourishType.heading)
                 Text("Enter the values from your food label or your own estimate.")
                 listOf("Energy (kcal)", "Protein (g)", "Carbs (g)", "Fat (g)").forEachIndexed { i, title ->
-                    NumberField(title, values[i]) { v -> values = ArrayList(values).apply { set(i, v) } }
+                    NumberField(title, values[i]) { v ->
+                        values = ArrayList(values).apply { set(i, v) }
+                        details = details?.let { org.json.JSONObject(it).put("macroSource","User-edited macros").toString() }
+                    }
                 }
                 NumberField(if (unit == "Grams") "Grams eaten" else "Servings eaten", qty) { qty = it }
                 val amounts = values.map(::parseAmount)

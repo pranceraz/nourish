@@ -28,7 +28,10 @@ internal fun FoodDetails(details: String?, update: (String) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val data = remember(details) { JSONObject(details ?: "{}") }
     val nutrients = data.optJSONObject("nutrients") ?: JSONObject()
-    if (details != null) Text(data.optString("source","User-entered nutrition"))
+    if (details != null) {
+        Text(listOf(data.optString("source","User-entered nutrition"),data.optString("macroSource"))
+            .filter { it.isNotBlank() }.joinToString(" · "))
+    }
     OutlinedButton(onClick = { open = !open }) { Text("Ingredients, vitamins & minerals") }
     if (!open) return
     data.optJSONArray("ingredients")?.let { rows ->

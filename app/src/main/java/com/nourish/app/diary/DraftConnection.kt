@@ -39,12 +39,13 @@ internal class DraftConnection(context: Context) {
     fun disconnect() = prefs.edit().clear().apply()
 
     suspend fun request(path: String, method: String, body: JSONObject? = null): JSONObject = withContext(Dispatchers.IO) {
-        check(origin.isNotEmpty())
-        val bytes = Base64.decode(prefs.getString("access", ""), Base64.NO_WRAP)
+        val stored = prefs.all
+        val address = requireNotNull(stored["origin"] as? String)
+        val bytes = Base64.decode(requireNotNull(stored["access"] as? String), Base64.NO_WRAP)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, bytes.copyOfRange(0,12)))
         val token = cipher.doFinal(bytes.copyOfRange(12,bytes.size)).decodeToString()
-        val connection = URI(origin + path).toURL().openConnection() as HttpsURLConnection
+        val connection = URI(address + path).toURL().openConnection() as HttpsURLConnection
         try {
             connection.requestMethod = method
             connection.instanceFollowRedirects = false

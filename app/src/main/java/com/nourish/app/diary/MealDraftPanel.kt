@@ -137,7 +137,8 @@ internal fun MealDraftPanel(
             val entries = groups.mapIndexed { index, group ->
                 val id = UUID.nameUUIDFromBytes("$intentId/$index".toByteArray()).toString()
                 val label = portionLabel(if (asDish) name else group.first().food.name,group,asDish)
-                Entry(id,date,meal,id,label,if (asDish) 1000 else group.first().grams.movePointRight(3).longValueExact(),now+index)
+                val catalogId = if (asDish) id else "usda-${group.first().food.id}"
+                Entry(id,date,meal,catalogId,label,if (asDish) 1000 else group.first().grams.movePointRight(3).longValueExact(),now+index)
             }
             onSave(entries,photo())
             onClose()
