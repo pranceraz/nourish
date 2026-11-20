@@ -73,3 +73,10 @@ Build reusable Compose components: `NourishScaffold`, `NourishBottomBar`, `HeroM
 - Compare against reference: **bold enough? playful enough? detailed enough? black anchors and hero color fields?**
 - Verify font licenses, color contrast, tap targets >=48dp, accessible labels, no overlapping text, animation smoothness.
 - UI changes require screenshot evidence in PRs. Avoid generic Material demo aesthetics.
+
+### P5 interaction polish and Android home-screen widget
+
+- **Page transitions.** Move smoothly between top-level destinations with a short, interruptible fade or slide. Keep the bottom navigation anchored. A quick second tap or Back gesture should take the user directly to the intended destination. Preserve each page’s scroll position and input state.
+- **Press and hold.** Buttons, actionable rows, and interactive panels give immediate visual feedback on touch-down. Use a subtle scale, tint, or elevation change, maintain it while held, and spring back on release or cancellation. Dragging away cancels the action. An ordinary hold must never save twice or trigger a destructive action. Give any dedicated long-press command a visible, accessible alternative.
+- **Reduced motion and access.** Honor the Android animator duration scale. With motion disabled, use an instant state change and retain clear pressed, selected, and focus indications. Verify rapid navigation, keyboard and TalkBack activation, and cancelled gestures.
+- **Resizable Android home-screen widget.** Offer a launcher widget for Today. At its smallest supported size, show the date and logged calories. As the user enlarges it, reveal macro totals and optional goal progress when they fit. Use the app’s pastel fields and oversized, readable numerals. Show an honest empty day and keep labels legible in light and dark themes. A tap opens Today. Read the same local diary and refresh after saves, edits, deletions, and day changes. Verify resize in both directions and relaunch on an Android launcher.
