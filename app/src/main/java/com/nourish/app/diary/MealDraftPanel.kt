@@ -1,6 +1,7 @@
 package com.nourish.app.diary
 
 import android.util.Base64
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -61,8 +62,8 @@ internal fun MealDraftPanel(
         Text(if (showAi) "Hide AI options" else "Describe a meal with AI")
     }
     if (showAi && service.origin.isNotEmpty()) {
-    OutlinedTextField(description,{ description = it.take(1500) }, Modifier.fillMaxWidth(),
-        label = { Text("Describe the dish and portion") })
+        OutlinedTextField(description,{ description = it.take(1500) }, Modifier.fillMaxWidth(),
+            label = { Text("Describe the dish and portion") })
         Text("Sends the description${if (hasPhoto) " and attached photo" else ""} to your Nourish server and OpenAI.")
         Button(enabled = !busy && (description.isNotBlank() || hasPhoto), onClick = { run {
             val request = JSONObject().put("description",description)
@@ -105,7 +106,8 @@ internal fun MealDraftPanel(
         val food = catalog?.byId?.get(row.getString("id"))
         val grams = parseAmount(row.getString("grams"))?.takeIf { it > 0 }
         if (food != null && grams != null) portions.add(Portion(food, java.math.BigDecimal.valueOf(grams,3),row.optString("assumption")))
-        Column(Modifier.fillMaxWidth().clip(NourishShape.panel).background(nourishColors.panel).padding(14.dp)) {
+        Column(Modifier.fillMaxWidth().clip(NourishShape.panel).background(nourishColors.panel)
+            .border(1.dp, nourishColors.text.copy(alpha = 0.16f), NourishShape.panel).padding(14.dp)) {
             Text(food?.name ?: row.optString("food"),style = NourishType.strong,color = nourishColors.text)
             Text(food?.let { "USDA FDC ${it.id}" } ?: "Choose a matching USDA food.",color = nourishColors.muted)
             Text(row.optString("assumption"), color = nourishColors.muted)

@@ -185,7 +185,10 @@ internal fun EntryEditor(
 
 @Composable
 internal fun GramsField(value: String, food: String, onChange: (String) -> Unit) {
-    NumberField("Grams", value, onChange)
+    OutlinedTextField(value, { onChange(it.take(10)) }, Modifier.fillMaxWidth(),
+        label = { Text("Grams") }, singleLine = true,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
     val grams = (parseAmount(value) ?: 0L) / 1000f
     Slider(
         value = grams.coerceIn(1f, 500f),
