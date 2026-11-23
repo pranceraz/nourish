@@ -15,6 +15,9 @@ import com.nourish.app.ui.theme.*
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import kotlin.math.roundToInt
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -32,6 +35,7 @@ internal fun EntryEditor(
     val newFoodId = rememberSaveable { UUID.randomUUID().toString() }
     var foodId by rememberSaveable { mutableStateOf(original?.foodId ?: newFoodId) }
     var picking by rememberSaveable { mutableStateOf(original == null) }
+    var showPhotoTools by rememberSaveable { mutableStateOf(false) }
     var drafting by rememberSaveable { mutableStateOf(false) }
     var details by rememberSaveable { mutableStateOf(original?.label?.details) }
     var name by rememberSaveable { mutableStateOf(original?.label?.name.orEmpty()) }
@@ -94,8 +98,13 @@ internal fun EntryEditor(
                 Heading(if (original != null) "Edit food" else "Log food", Modifier.weight(1f))
                 TextButton(enabled = !busy && !processing, onClick = ::close) { Text("Close") }
             }
-            if (original == null && !drafting) PrimaryDraftButton { drafting = true }
-            PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
+            if (original == null && !drafting && (picking || draftPhoto != null)) PrimaryDraftButton { drafting = true }
+            if (picking || drafting) {
+                TextButton(onClick = { showPhotoTools = !showPhotoTools }) {
+                    Text(if (showPhotoTools) "Hide camera options" else if (drafting) "Attach photo" else "Photo or barcode")
+                }
+            }
+            if ((!picking && !drafting) || showPhotoTools || draftPhoto != null) PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
                 onPhoto = { new ->
                     draftPhoto?.let { images.draftFile(it).delete() }
                     draftPhoto = new
@@ -142,7 +151,8 @@ internal fun EntryEditor(
                         details = details?.let { org.json.JSONObject(it).put("macroSource","User-edited macros").toString() }
                     }
                 }
-                NumberField(if (unit == "Grams") "Grams eaten" else "Servings eaten", qty) { qty = it }
+                if (unit == "Grams") GramsField(qty, name) { qty = it }
+                else NumberField("Servings eaten", qty) { qty = it }
                 val amounts = values.map(::parseAmount)
                 val quantity = parseAmount(qty)
                 val valid = name.isNotBlank() && amounts.all { it != null } && quantity != null && quantity > 0
@@ -174,6 +184,21 @@ internal fun EntryEditor(
 }
 
 @Composable
+internal fun GramsField(value: String, food: String, onChange: (String) -> Unit) {
+    OutlinedTextField(value, { onChange(it.take(10)) }, Modifier.fillMaxWidth(),
+        label = { Text("Grams") }, singleLine = true,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+    val grams = (parseAmount(value) ?: 0L) / 1000f
+    Slider(
+        value = grams.coerceIn(1f, 500f),
+        onValueChange = { onChange(it.roundToInt().toString()) },
+        valueRange = 1f..500f,
+        modifier = Modifier.semantics { contentDescription = "Grams for ${food.ifBlank { "this food" }}" }
+    )
+}
+
+@Composable
 internal fun NumberField(label: String, value: String, onChange: (String) -> Unit) {
     OutlinedTextField(value, { onChange(it.take(10)) }, Modifier.fillMaxWidth(), label = { Text(label) },
         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
@@ -193,5 +218,5 @@ internal fun Choices(title: String, value: String, options: List<String>, onChan
 
 @Composable
 private fun PrimaryDraftButton(onClick: () -> Unit) {
-    com.nourish.app.ui.PrimaryPillButton("Build a meal · USDA & AI", onClick)
+    com.nourish.app.ui.PrimaryPillButton("Add food or dish", onClick)
 }

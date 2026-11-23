@@ -32,8 +32,13 @@ class MealDraftTest {
         for (dish in listOf(false,true)) {
             compose.waitUntil(20000) { compose.onAllNodesWithContentDescription("Quick add meal").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Quick add meal").performClick()
-            tap("Build a meal · USDA & AI")
+            tap("Add food or dish")
             findFood("goat milk","Goat milk")
+            val grams = compose.onNode(hasSetTextAction() and hasText("Grams"))
+            compose.onNodeWithContentDescription("Grams for Goat milk").performScrollTo()
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(150f) }
+            grams.assertTextContains("150")
+            grams.performTextReplacement("100")
             findFood("buttermilk","Buttermilk")
             if (dish) {
                 tap("Complete dish")

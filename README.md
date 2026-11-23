@@ -12,7 +12,7 @@ In Android, open **Settings → AI connection & personal USDA key**, connect to 
 
 ## Everyday meals in v0.4.0
 
-Tap **+ → Build a meal · USDA & AI**. Search 5,431 USDA survey foods and dishes offline, add ingredients and edit their gram weights. The review shows the combined calories and macros. **Ingredient breakdown** saves separate diary items together. **Complete dish** saves one reusable serving with its ingredient and nutrient snapshot. Expand a food’s details to review the FDC IDs and vitamins and minerals. Settings → Nutrients & daily goals controls visibility and targets.
+Tap **+ → Add food or dish**. Search 5,431 USDA survey foods and dishes offline, add ingredients and edit their gram weights. The review shows the combined calories and macros. **Ingredient breakdown** saves separate diary items together. **Complete dish** saves one reusable serving with its ingredient and nutrient snapshot. Expand a food’s details to review the FDC IDs and vitamins and minerals. Settings → Nutrients & daily goals controls visibility and targets.
 
 An optional [private backend](server/README.md) enables photo/text ingredient identification, editable AI goal suggestions and a read-only USDA lookup through MCP. A personal USDA key is optional and applies only to authorized live tool calls. The APK works offline immediately; AI requests require configuring your own HTTPS service in Settings.
 

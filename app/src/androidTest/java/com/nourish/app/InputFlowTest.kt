@@ -63,6 +63,7 @@ class InputFlowTest {
         try {
             compose.waitUntil(30000) { compose.onAllNodesWithContentDescription("Quick add meal").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Quick add meal").performClick()
+            tap("Photo or barcode")
             tap("Scan package barcode")
             waitText("Package · 05901234123457")
             field("Food name","Test lentils")
