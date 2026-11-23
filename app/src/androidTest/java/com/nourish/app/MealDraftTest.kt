@@ -34,6 +34,11 @@ class MealDraftTest {
             compose.onNodeWithContentDescription("Quick add meal").performClick()
             tap("Add food or dish")
             findFood("goat milk","Goat milk")
+            val grams = compose.onNode(hasSetTextAction() and hasText("Grams"))
+            compose.onNodeWithContentDescription("Grams for Goat milk").performScrollTo()
+                .performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.SetProgress) { it(150f) }
+            grams.assertTextContains("150")
+            grams.performTextReplacement("100")
             findFood("buttermilk","Buttermilk")
             if (dish) {
                 tap("Complete dish")
