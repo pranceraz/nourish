@@ -18,6 +18,7 @@ internal fun ConnectionSettings() {
     val context = LocalContext.current
     val service = remember { DraftConnection(context) }
     val scope = rememberCoroutineScope()
+    var showLookup by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     var address by remember { mutableStateOf(service.origin) }
     var token by remember { mutableStateOf("") }
@@ -68,23 +69,26 @@ internal fun ConnectionSettings() {
                     val count = ChatSync.receive(context)
                     status = "Up to date · $count new meals."
                 } }) { Text("Check for meals now") }
-                Text("Optional USDA key for authorized GPT food lookup. Saving sends it to this server for encrypted storage. Meal drafts use the bundled USDA catalog.")
-                OutlinedTextField(key, { key = it }, label = { Text("Personal USDA API key") },
-                    visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false), singleLine = true)
-                Button(enabled = !busy && key.trim().length in 8..128, onClick = { run {
-                    service.request("/v1/settings/usda","PUT",JSONObject().put("key",key.trim()))
-                    key = ""
-                    status = "Personal key saved for GPT lookup."
-                } }) { Text("Save USDA key") }
-                TextButton(enabled = !busy, onClick = { run {
-                    val configured = service.request("/v1/settings/usda","GET").getBoolean("configured")
-                    status = if (configured) "A personal key is stored." else "No personal key is stored."
-                } }) { Text("Check key status") }
-                TextButton(enabled = !busy, onClick = { run {
-                    service.request("/v1/settings/usda","DELETE")
-                    key = ""
-                    status = "Personal key removed from the server."
-                } }) { Text("Remove USDA key") }
+                TextButton(onClick = { showLookup = !showLookup }) { Text("Personal USDA lookup key") }
+                if (showLookup) {
+                    Text("Optional USDA key for authorized GPT food lookup. Saving sends it to this server for encrypted storage. Meal drafts use the bundled USDA catalog.")
+                    OutlinedTextField(key, { key = it }, label = { Text("Personal USDA API key") },
+                        visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false), singleLine = true)
+                    Button(enabled = !busy && key.trim().length in 8..128, onClick = { run {
+                        service.request("/v1/settings/usda","PUT",JSONObject().put("key",key.trim()))
+                        key = ""
+                        status = "Personal key saved for GPT lookup."
+                    } }) { Text("Save USDA key") }
+                    TextButton(enabled = !busy, onClick = { run {
+                        val configured = service.request("/v1/settings/usda","GET").getBoolean("configured")
+                        status = if (configured) "A personal key is stored." else "No personal key is stored."
+                    } }) { Text("Check key status") }
+                    TextButton(enabled = !busy, onClick = { run {
+                        service.request("/v1/settings/usda","DELETE")
+                        key = ""
+                        status = "Personal key removed from the server."
+                    } }) { Text("Remove USDA key") }
+                }
                 TextButton(enabled = !busy, onClick = {
                     service.disconnect(); connected = false; key = ""; status = "Device disconnected. Server keys can be removed while connected."
                 }) { Text("Disconnect device") }

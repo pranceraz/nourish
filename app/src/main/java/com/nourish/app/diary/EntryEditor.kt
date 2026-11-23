@@ -98,13 +98,13 @@ internal fun EntryEditor(
                 Heading(if (original != null) "Edit food" else "Log food", Modifier.weight(1f))
                 TextButton(enabled = !busy && !processing, onClick = ::close) { Text("Close") }
             }
-            if (picking && !drafting) PrimaryDraftButton { drafting = true }
-            if (picking && !drafting) {
+            if (original == null && !drafting && (picking || draftPhoto != null)) PrimaryDraftButton { drafting = true }
+            if (picking || drafting) {
                 TextButton(onClick = { showPhotoTools = !showPhotoTools }) {
-                    Text(if (showPhotoTools) "Hide camera options" else "Photo or barcode")
+                    Text(if (showPhotoTools) "Hide camera options" else if (drafting) "Attach photo" else "Photo or barcode")
                 }
             }
-            if ((!picking && !drafting) || showPhotoTools || draftPhoto != null || drafting && DraftConnection(LocalContext.current).origin.isNotEmpty()) PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
+            if ((!picking && !drafting) || showPhotoTools || draftPhoto != null) PhotoControls(images, draftPhoto, savedPhoto.takeUnless { photoChanged }, picking && !drafting,
                 onPhoto = { new ->
                     draftPhoto?.let { images.draftFile(it).delete() }
                     draftPhoto = new
