@@ -32,7 +32,7 @@ class MealDraftTest {
         for (dish in listOf(false,true)) {
             compose.waitUntil(20000) { compose.onAllNodesWithContentDescription("Quick add meal").fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithContentDescription("Quick add meal").performClick()
-            tap("Build a meal · USDA & AI")
+            tap("Add food or dish")
             findFood("goat milk","Goat milk")
             findFood("buttermilk","Buttermilk")
             if (dish) {
